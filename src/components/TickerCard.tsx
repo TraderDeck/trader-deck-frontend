@@ -1,5 +1,5 @@
 import { Ticker } from "../types/Ticker";
-import { SquarePlay, Square, SquareSigma } from "lucide-react";
+import { SquarePlay, Square, SquareSigma, HelpCircle } from "lucide-react";
 import { useState } from "react";
 
 
@@ -14,17 +14,24 @@ const TickerCard = ({ ticker }: Props) => {
 const [checked, setChecked] = useState<boolean>(false); 
 
   return (
-    // <div className="p-4 border border-gray-200 rounded-lg shadow-sm">
-    //   <h3 className="text-xl font-bold">{ticker.name} ({ticker.symbol})</h3>
-    //   <p>Industry: {ticker.industry}</p>
-    //   <p>Sector: {ticker.sector}</p>
-    //   <p>Market Cap: {ticker.marketCap}</p>
-    // </div>
 
     <div className="w-full h-auto flex relative shadow-md pt-4 pb-4 ">
-      <div className="w-1/5 h-ful text-center border-2 pt-4" >
-       Logo
+      <div className="w-1/5 h-full pt-4" >
+
+      {ticker.logoUrl &&
+      <img
+            src={ticker.logoUrl}
+            alt={ticker.symbol}
+            className="w-16 h-16 object-contain border border-gray-300 rounded-lg bg-dark-green"
+          />
+      }
+      {!ticker.logoUrl &&
+          <div className="flex items-center justify-center w-16 h-16 object-contain border border-gray-300 rounded-lg bg-dark-green">
+            <HelpCircle size={24} className="text-white" />
+          </div>
+      }
       </div>
+
       
       <div className="w-4/5 h-full flex flex-col">
         <div className="h-1/2 flex">

@@ -84,7 +84,7 @@ const Picks = () => {
         name: "",
         industry: "", 
         sector: "Technology",
-        marketCapMin: "",
+        marketCapMin: "100000000",
       });
 
     }, []); 
