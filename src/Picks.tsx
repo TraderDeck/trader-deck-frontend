@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import useTickers from "./hooks/useTickers";
+import { Ticker } from "./types/Ticker";
 import { Eye, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import TickerCard from "./components/TickerCard";
+import PicksFilter from "./components/PicksFilter";
+
 
 
 
@@ -19,6 +22,7 @@ const Picks = () => {
 
     const { tickers, loading, error } = useTickers(submittedFilters);
 
+    const [filteredTickers, setFilteredTickers] = useState<Ticker[]>(tickers); 
 
     //pagination 
     const [currentPage, setCurrentPage] = useState(1);
@@ -35,8 +39,7 @@ const Picks = () => {
           setInputValue(Math.min(Number(inputValue) + 1, totalPages).toString()); 
       }else {
         setInputValue(Math.max(Number(inputValue) - 1, 1).toString());
-          console.log("current page is set and it is : ", currentPage);
-          console.log("ticker are: ", tickers);
+
       }
 
   
@@ -65,8 +68,8 @@ const Picks = () => {
   
     if (itemsPerPage === 0) return null;
   
-    const totalPages = Math.ceil(tickers.length / itemsPerPage);
-    const currentTickers = tickers.slice(
+    const totalPages = Math.ceil(filteredTickers.length / itemsPerPage);
+    const currentTickers = filteredTickers.slice(
       (currentPage - 1) * itemsPerPage,
       currentPage * itemsPerPage
     );
@@ -84,11 +87,13 @@ const Picks = () => {
         name: "",
         industry: "", 
         sector: "Technology",
-        marketCapMin: "100000000",
+        marketCapMin: "1000000000",
       });
-
     }, []); 
 
+    useEffect(()=> {
+      setFilteredTickers(tickers);
+    }, [tickers]); 
 
 
 
@@ -117,6 +122,14 @@ const Picks = () => {
         inputRef.current?.blur(); // Remove focus after entering a valid number
       }
     };
+
+    const handleApplyFilters = (filteredTickers: Ticker[]) => {
+      console.log("filtered tickers are: ", filteredTickers);
+      setFilteredTickers(filteredTickers); 
+      setCurrentPage(1); 
+    
+    };
+
   
     return (
       //      <div className="flex flex-col min-h-screen">
@@ -124,7 +137,7 @@ const Picks = () => {
       <div className="flex flex-col min-h-screen">
         <div className="h-12 bg-parchment border-b-4 border-b-parchment shadow-md flex space-x-4 p-4 items-center">
         <Eye className="w-6 h-6 text-bittersweet-shimmer ml-8 mr-6" />
-        <Filter className="w-6 h-6 text-green-500" />
+        <PicksFilter tickers={tickers} onFilterApply={handleApplyFilters}/>
 
         <ChevronUp className="w-6 h-6 text-gray-700" />
         <ChevronDown className="w-6 h-6 text-gray-700" />
@@ -162,65 +175,6 @@ const Picks = () => {
 
           </div>
 
-          {/* <h2 className="text-2xl font-bold mb-4">Search Tickers</h2>
-
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-            <input
-              type="text"
-              name="symbol"
-              placeholder="Symbol"
-              value={filters.symbol}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="name"
-              placeholder="Name"
-              value={filters.name}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="industry"
-              placeholder="Industry"
-              value={filters.industry}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-            <input
-              type="text"
-              name="sector"
-              placeholder="Sector"
-              value={filters.sector}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-            <input
-              type="number"
-              name="marketCapMin"
-              placeholder="Min Market Cap"
-              value={filters.marketCap}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-            <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-              Search
-            </button>
-          </form> */}
-
-          {/* {loading && <p>Loading tickers...</p>}
-          {error && <p className="text-red-500">Error: {error.message}</p>} */}
-
-          {/* <div className="mt-4">
-            {tickers.length > 0 ? (
-              tickers.map((ticker) => <TickerCard key={ticker.symbol} ticker={ticker} />)
-            ) : (
-              <p>No tickers found.</p>
-            )}
-          </div> */}
         </div>
 
       </div>

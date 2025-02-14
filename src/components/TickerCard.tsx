@@ -1,6 +1,7 @@
 import { Ticker } from "../types/Ticker";
 import { SquarePlay, Square, SquareSigma, HelpCircle } from "lucide-react";
 import { useState } from "react";
+import { cleanTickerName } from "../utils/tickerUtils";
 
 
 interface Props {
@@ -39,7 +40,7 @@ const [checked, setChecked] = useState<boolean>(false);
  
           <p className="text-l font-bold ml-2"> {ticker.symbol}</p>
 
-          <p className="text-l"> {ticker.name} </p>
+          <p className="text-l"> {cleanTickerName(ticker.name)} </p>
 
           
             <div className="ml-auto top-0 w-1/8 h-full">
