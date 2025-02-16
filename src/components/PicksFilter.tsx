@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, Filter, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Filter, X } from 'lucide-react';
 import { Ticker } from '../types/Ticker';
 import { cleanTickerName } from '../utils/tickerUtils';
 
@@ -11,6 +11,8 @@ interface Props {
 
 const FilterMenu = ({ tickers, onFilterApply }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  
   const [selectedTickers, setSelectedTickers] = useState<string[]>([]);
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
@@ -40,20 +42,37 @@ const FilterMenu = ({ tickers, onFilterApply }: Props) => {
   const applyFilters = () => {
 
     const filteredTickers = tickers.filter(ticker => 
-      (selectedTickers.length === 0 || selectedTickers.includes(`${ticker.symbol}: ${ticker.name}`)) &&
+      (selectedTickers.length === 0 || selectedTickers.includes(`${ticker.symbol}: ${cleanTickerName(ticker.name)}`)) &&
       (selectedSectors.length === 0 || selectedSectors.includes(ticker.sector ?? '')) &&
       (selectedIndustries.length === 0 || selectedIndustries.includes(ticker.industry ?? '')) &&
       (selectedCountries.length === 0 || selectedCountries.includes(ticker.country ?? '')) &&
       (!minMarketCap || (ticker.marketCap ?? 0) >= parseFloat(minMarketCap) * 1_000_000) &&
       (!maxMarketCap || (ticker.marketCap ?? 0) <= parseFloat(maxMarketCap) * 1_000_000)
     );
-    console.log("selected countries: ", selectedCountries);
+    console.log("selected Tickers: ", selectedTickers);
+    console.log("filtered Tickers: ", filteredTickers);
+
     onFilterApply(filteredTickers);
     setIsMenuOpen(false);
   };
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        menuRef.current &&
+        event.target instanceof Node && 
+        !menuRef.current.contains(event.target)
+      ) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [])
+  
+
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button onClick={toggleMenu} className="px-4 py-2 bg-blue-500 text-white rounded-md flex items-center">
         {isMenuOpen ? 'Close Filters' : 'Open Filters'}
         {(selectedTickers.length > 0 || selectedSectors.length > 0 || selectedIndustries.length > 0 || selectedCountries.length > 0 || minMarketCap || maxMarketCap) && <Filter size={16} className="ml-2 text-yellow-500" />}
@@ -68,6 +87,11 @@ const FilterMenu = ({ tickers, onFilterApply }: Props) => {
               value={tickerInput}
               onChange={(e) => setTickerInput(e.target.value)}
               onBlur={() => handleMultiSelect(tickerInput, selectedTickers, setSelectedTickers, setTickerInput)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleMultiSelect(tickerInput, selectedTickers, setSelectedTickers, setTickerInput)
+                }
+              }}
               list="tickers"
               className="w-full p-2 border rounded mt-1"
               placeholder="Search ticker..."

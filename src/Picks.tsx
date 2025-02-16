@@ -4,6 +4,7 @@ import { Ticker } from "./types/Ticker";
 import { Eye, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import TickerCard from "./components/TickerCard";
 import PicksFilter from "./components/PicksFilter";
+import SortMenu from "./components/SortMenu";
 
 
 
@@ -21,8 +22,24 @@ const Picks = () => {
     const [submittedFilters, setSubmittedFilters] = useState<null | typeof filters>(null);
 
     const { tickers, loading, error } = useTickers(submittedFilters);
-
     const [filteredTickers, setFilteredTickers] = useState<Ticker[]>(tickers); 
+
+    const [sortOption, setSortOption] = useState({ field: "symbol", order: "asc" });
+  
+    const sortedTickers = [...filteredTickers].sort((a, b) => {
+      const { field, order } = sortOption;
+    
+      if (field === "marketCap") {
+        const valueA = a.marketCap ?? 0;
+        const valueB = b.marketCap ?? 0;
+        return order === "asc" ? valueA - valueB : valueB - valueA;
+      } else {
+        return order === "asc"
+          ? (a[field as keyof Ticker] as string).localeCompare(b[field as keyof Ticker] as string)
+          : (b[field as keyof Ticker] as string).localeCompare(a[field as keyof Ticker] as string);
+      }
+    });
+    
 
     //pagination 
     const [currentPage, setCurrentPage] = useState(1);
@@ -56,20 +73,18 @@ const Picks = () => {
           setItemsPerPage(Math.max(minVisibleItems, maxVisibleItems));
         }
       };
-  
-      console.log("Iam here2");
+
   
       window.addEventListener("resize", updateItemsPerPage);
       updateItemsPerPage(); 
-      console.log("Iam here3");
   
       return () => window.removeEventListener("resize", updateItemsPerPage);
     }, []);
   
     if (itemsPerPage === 0) return null;
   
-    const totalPages = Math.ceil(filteredTickers.length / itemsPerPage);
-    const currentTickers = filteredTickers.slice(
+    const totalPages = Math.ceil(sortedTickers.length / itemsPerPage);
+    const currentTickers = sortedTickers.slice(
       (currentPage - 1) * itemsPerPage,
       currentPage * itemsPerPage
     );
@@ -124,19 +139,19 @@ const Picks = () => {
     };
 
     const handleApplyFilters = (filteredTickers: Ticker[]) => {
-      console.log("filtered tickers are: ", filteredTickers);
       setFilteredTickers(filteredTickers); 
       setCurrentPage(1); 
-    
-    };
 
+    };
   
     return (
       //      <div className="flex flex-col min-h-screen">
 
       <div className="flex flex-col min-h-screen">
         <div className="h-12 bg-parchment border-b-4 border-b-parchment shadow-md flex space-x-4 p-4 items-center">
-        <Eye className="w-6 h-6 text-bittersweet-shimmer ml-8 mr-6" />
+        <div className="ml-4 mr-12">
+        <SortMenu setSortOption={setSortOption} />
+        </div>
         <PicksFilter tickers={tickers} onFilterApply={handleApplyFilters}/>
 
         <ChevronUp className="w-6 h-6 text-gray-700" />
