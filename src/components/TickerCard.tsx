@@ -1,18 +1,34 @@
-import { Ticker } from "../types/Ticker";
+import { CategorizedTicker } from "../types/Ticker";
+import { TickerCategory} from "../types/Ticker";
+import {TICKER_CATEGORIES} from "../constants/Ticker";
+
 import { SquarePlay, Square, SquareSigma, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { cleanTickerName } from "../utils/tickerUtils";
 
 
 interface Props {
-  ticker: Ticker;
+  ticker: CategorizedTicker;
+  updateCategory: (symbol: string, category: TickerCategory) => void;
 }
 
 
-const TickerCard = ({ ticker }: Props) => {
+const TickerCard = ({ ticker, updateCategory }: Props) => {
+  const [category, setCategory] = useState<TickerCategory>(ticker.category);
 
 
-const [checked, setChecked] = useState<boolean>(false); 
+  const handleClick = () => {
+    let newCategory: TickerCategory =
+      category === TICKER_CATEGORIES.NONE
+        ? TICKER_CATEGORIES.CONSIDERING
+        : category === TICKER_CATEGORIES.CONSIDERING
+        ? TICKER_CATEGORIES.PLAYING
+        : TICKER_CATEGORIES.NONE;
+
+    setCategory(newCategory);
+    updateCategory(ticker.symbol, newCategory);
+  };
+
 
   return (
 
@@ -44,16 +60,15 @@ const [checked, setChecked] = useState<boolean>(false);
 
           
             <div className="ml-auto top-0 w-1/8 h-full">
-            <button
-              onClick={() => setChecked(!checked)}
-              className="flex ml-auto pr-2 items-center space-x-2 focus:outline-none"
-            >
-              {checked ? (
-                <SquarePlay className="w-6 h-6 text-green-500" />
-              ) : (
-                <Square className="w-6 h-6 text-gray-500" />
-              )}
-            </button>
+            <button onClick={handleClick} className="flex ml-auto pr-2 items-center space-x-2 focus:outline-none">
+                {category === TICKER_CATEGORIES.PLAYING ? (
+                  <SquarePlay className="w-6 h-6 text-kelly-green" />
+                ) : category === TICKER_CATEGORIES.CONSIDERING ? (
+                  <SquareSigma className="w-6 h-6 text-yellow-green" />
+                ) : (
+                  <Square className="w-6 h-6 text-bittersweet-shimmer" />
+                )}
+              </button>
             </div>
 
           </div>

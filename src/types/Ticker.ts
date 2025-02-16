@@ -1,3 +1,5 @@
+import { TICKER_CATEGORIES } from "../constants/Ticker";
+
 export type Ticker = {
     symbol: string;
     name: string | null;
@@ -7,4 +9,10 @@ export type Ticker = {
     marketCap: number | null;
     logoUrl? : string; 
 };
+
   
+export type TickerCategory = (typeof TICKER_CATEGORIES)[keyof typeof TICKER_CATEGORIES];
+  
+export interface CategorizedTicker extends Ticker {
+  category: TickerCategory;
+}

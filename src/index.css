@@ -11,3 +11,8 @@
   --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
   --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* to prevent text selection when clicking buttons */
+button, svg, .no-select {
+  @apply select-none;
+}

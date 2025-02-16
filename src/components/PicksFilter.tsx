@@ -1,18 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Filter, X } from 'lucide-react';
-import { Ticker } from '../types/Ticker';
+import { CategorizedTicker} from '../types/Ticker';
+import { TickerCategory} from "../types/Ticker";
+import {TICKER_CATEGORIES} from "../constants/Ticker";
 import { cleanTickerName } from '../utils/tickerUtils';
+import { SquarePlay, Square, SquareSigma } from "lucide-react";
+
 
 interface Props {
-    tickers: Ticker[];
-    onFilterApply: (filteredTickers: Ticker[]) => void;
+    tickers: CategorizedTicker[];
+    onFilterApply: (filteredTickers: CategorizedTicker[]) => void;
 }
 
 
 const FilterMenu = ({ tickers, onFilterApply }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  
+
+  const [selectedCategories, setSelectedCategories] = useState<TickerCategory[]>([]);
   const [selectedTickers, setSelectedTickers] = useState<string[]>([]);
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
@@ -38,19 +43,27 @@ const FilterMenu = ({ tickers, onFilterApply }: Props) => {
     }
     setInput('');
   };
+
+  const toggleCategory = (category: TickerCategory) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category) 
+        : [...prev, category]
+    );
+  };
   
   const applyFilters = () => {
 
     const filteredTickers = tickers.filter(ticker => 
       (selectedTickers.length === 0 || selectedTickers.includes(`${ticker.symbol}: ${cleanTickerName(ticker.name)}`)) &&
+      (selectedCategories.length === 0 || selectedCategories.includes(ticker.category)) &&
       (selectedSectors.length === 0 || selectedSectors.includes(ticker.sector ?? '')) &&
       (selectedIndustries.length === 0 || selectedIndustries.includes(ticker.industry ?? '')) &&
       (selectedCountries.length === 0 || selectedCountries.includes(ticker.country ?? '')) &&
       (!minMarketCap || (ticker.marketCap ?? 0) >= parseFloat(minMarketCap) * 1_000_000) &&
       (!maxMarketCap || (ticker.marketCap ?? 0) <= parseFloat(maxMarketCap) * 1_000_000)
     );
-    console.log("selected Tickers: ", selectedTickers);
-    console.log("filtered Tickers: ", filteredTickers);
+
 
     onFilterApply(filteredTickers);
     setIsMenuOpen(false);
@@ -72,14 +85,39 @@ const FilterMenu = ({ tickers, onFilterApply }: Props) => {
   
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative ml-12" ref={menuRef}>
       <button onClick={toggleMenu} className="px-4 py-2 bg-blue-500 text-white rounded-md flex items-center">
         {isMenuOpen ? 'Close Filters' : 'Open Filters'}
         {(selectedTickers.length > 0 || selectedSectors.length > 0 || selectedIndustries.length > 0 || selectedCountries.length > 0 || minMarketCap || maxMarketCap) && <Filter size={16} className="ml-2 text-yellow-500" />}
       </button>
       {isMenuOpen && (
+        
         <div className="absolute left-0 top-full mt-2 w-80 bg-white p-4 border rounded shadow-lg z-50">
           
+          <div className="mt-2">
+          <h4 className="font-semibold">Categories</h4>
+          <div className="flex space-x-4 mt-1">
+            <div 
+              className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.PLAYING) ? 'border-blue-500' : 'border-gray-300'}`} 
+              onClick={() => toggleCategory(TICKER_CATEGORIES.PLAYING)}
+            >
+              <SquarePlay className="w-6 h-6 text-kelly-green" />
+            </div>
+            <div 
+              className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.CONSIDERING) ? 'border-blue-500' : 'border-gray-300'}`} 
+              onClick={() => toggleCategory(TICKER_CATEGORIES.CONSIDERING)}
+            >
+              <SquareSigma className="w-6 h-6 text-yellow-green" />
+            </div>
+            <div 
+              className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.NONE) ? 'border-blue-500' : 'border-gray-300'}`} 
+              onClick={() => toggleCategory(TICKER_CATEGORIES.NONE)}
+            >
+              <Square className="w-6 h-6 text-bittersweet-shimmer" />
+            </div>
+          </div>
+        </div>
+
           <div className="mt-2">
             <h4 className="font-semibold">Ticker</h4>
             <input
