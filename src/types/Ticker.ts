@@ -16,3 +16,13 @@ export type TickerCategory = (typeof TICKER_CATEGORIES)[keyof typeof TICKER_CATE
 export interface CategorizedTicker extends Ticker {
   category: TickerCategory;
 }
+ 
+export type tickerPicksFilters = {
+  categories: TickerCategory[];
+  tickers: string[];
+  sectors: string[];
+  industries: string[];
+  countries: string[];
+  minMarketCap: string;
+  maxMarketCap: string;
+}

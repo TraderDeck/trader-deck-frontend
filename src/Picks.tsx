@@ -1,16 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 import useTickers from "./hooks/useTickers";
-import { Ticker, CategorizedTicker, TickerCategory } from "./types/Ticker";
+import { cleanTickerName } from './utils/tickerUtils';
+import { Ticker, CategorizedTicker, TickerCategory, tickerPicksFilters } from "./types/Ticker";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import TickerCard from "./components/TickerCard";
 import PicksFilter from "./components/PicksFilter";
 import SortMenu from "./components/SortMenu";
 import PicksDateSelector from "./components/PicksCalendar";
 import { TICKER_CATEGORIES } from "./constants/Ticker";
+import NotesEditor from "./components/ui/NotesEditor";
 
-
-
-
+import { CollapsibleSection } from "./components/ui/CollapsibleSection";
 
 const Picks = () => {
 
@@ -26,16 +26,69 @@ const Picks = () => {
       return today.toISOString().split("T")[0]; 
     });
 
+    //For testing to get tickers from db (this will get replaced)
     const [submittedFilters, setSubmittedFilters] = useState<null | typeof filters>(null);
-    
     const { tickers, loading, error } = useTickers(submittedFilters);
+    //
 
     const [categorizedTickers, setCategorizedTickers] = useState<CategorizedTicker[]>([]);
 
     const [filteredTickers, setFilteredTickers] = useState<CategorizedTicker[]>(categorizedTickers); 
 
     const [sortOption, setSortOption] = useState({ field: "symbol", order: "asc" });
+    
+    /*============= Pagination ==============*/
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
+    const containerRef = useRef<HTMLDivElement | null>(null); 
+    const [inputValue, setInputValue] = useState("1");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+
+    const [selectedFilters, setSelectedFilters] = useState<tickerPicksFilters>({
+      categories: [],
+      tickers: [],
+      sectors: [],
+      industries: [],
+      countries: [],
+      minMarketCap: '',
+      maxMarketCap: ''
+    });
+
+    const [notes, setNotes] = useState(""); // Store notes for the selected ticker
+
+    const handleSaveNotes = (newNotes: string) => {
+      setNotes(newNotes);
+      console.log("Saved Notes:", newNotes); // Replace with an API call to persist data
+    };
+
+
+    const applyFilters = (filters: tickerPicksFilters) => {
+      setSelectedFilters(filters);
+      const filteredTickers = categorizedTickers.filter(ticker =>
+        (filters.tickers.length === 0 || filters.tickers.includes(`${ticker.symbol}: ${cleanTickerName(ticker.name)}`)) &&
+        (filters.sectors.length === 0 || ticker.sector && filters.sectors.includes(ticker.sector)) &&
+        (filters.industries.length === 0 || ticker.industry && filters.industries.includes(ticker.industry)) &&
+        (filters.countries.length === 0 || ticker.country && filters.countries.includes(ticker.country)) &&
+        (!filters.minMarketCap || (ticker.marketCap !== null && ticker.marketCap >= parseFloat(filters.minMarketCap) * 1_000_000)) &&
+        (!filters.maxMarketCap || (ticker.marketCap !== null && ticker.marketCap <= parseFloat(filters.maxMarketCap) * 1_000_000)) &&
+        (filters.categories.length === 0 || filters.categories.includes(ticker.category)) // ✅ Ensure categories persist
+      );
+    
+      setFilteredTickers(filteredTickers);
+      setCurrentPage(1); 
+    };
   
+    
+    const SetPrevOrNextPage = (forward: boolean) => {
+      if (forward){
+          setInputValue(Math.min(Number(inputValue) + 1, totalPages).toString()); 
+      }else {
+        setInputValue(Math.max(Number(inputValue) - 1, 1).toString());
+
+      }
+    }
+    
     const sortedTickers = [...filteredTickers].sort((a, b) => {
       const { field, order } = sortOption;
     
@@ -49,25 +102,7 @@ const Picks = () => {
           : (b[field as keyof Ticker] as string).localeCompare(a[field as keyof Ticker] as string);
       }
     });
-    
-    //pagination 
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(5);
-    const containerRef = useRef<HTMLDivElement | null>(null); 
-    const [inputValue, setInputValue] = useState("1");
-    const inputRef = useRef<HTMLInputElement>(null);
-  
-    
-    const SetPrevOrNextPage = (forward: boolean) => {
-      if (forward){
-          setInputValue(Math.min(Number(inputValue) + 1, totalPages).toString()); 
-      }else {
-        setInputValue(Math.max(Number(inputValue) - 1, 1).toString());
 
-      }
-    }
-    
-  
     useEffect(() => {
       const updateItemsPerPage = () => {
   
@@ -78,7 +113,6 @@ const Picks = () => {
           setItemsPerPage(Math.max(minVisibleItems, maxVisibleItems));
         }
       };
-
   
       window.addEventListener("resize", updateItemsPerPage);
       updateItemsPerPage(); 
@@ -106,28 +140,21 @@ const Picks = () => {
         symbol: "",
         name: "",
         industry: "", 
-        sector: "Technology",
+        sector: "",
         marketCapMin: "1000000000",
       });
     }, []); 
 
     //After tickers are retrieved
     useEffect(()=> {
-      setCategorizedTickers( tickers.map((ticker) => ({
+      const tickersWithCategories = tickers.map((ticker) => ({
         ...ticker,
         category: TICKER_CATEGORIES.NONE,
-      })) );
-      setFilteredTickers(categorizedTickers);
+      })); 
+
+      setCategorizedTickers(tickersWithCategories);
+      setFilteredTickers(tickersWithCategories);
     }, [tickers]); 
-
-    //after categorizedTickers change
-    useEffect(()=> {
-      setFilteredTickers(categorizedTickers);
-    }, [categorizedTickers]); 
-
-
-
-
 
     const handlePageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       setInputValue(event.target.value);
@@ -154,10 +181,6 @@ const Picks = () => {
       }
     };
 
-    const handleApplyFilters = (filteredTickers: CategorizedTicker[]) => {
-      setFilteredTickers(filteredTickers); 
-      setCurrentPage(1); 
-    };
 
     const handleDateChange = (date: Date) => {
       const formattedDate = date.toISOString().split("T")[0]; // Convert Date to 'YYYY-MM-DD'
@@ -168,7 +191,19 @@ const Picks = () => {
 
     const updateCategory = (symbol: string, category: TickerCategory) => {
       const currentTickerSymbols = new Set(currentTickers.map((t) => t.symbol));
-     
+
+      if (selectedFilters.categories.length > 0) {
+        setFilteredTickers((prev = []) =>
+          prev
+            .map((ticker) =>
+              currentTickerSymbols?.has(ticker.symbol) && ticker.symbol === symbol
+                ? { ...ticker, category }
+                : ticker
+            )
+            .filter(ticker => selectedFilters.categories.includes(ticker.category))
+        );
+      }
+      
       setCategorizedTickers((prev) =>
         prev.map((ticker) =>
           currentTickerSymbols.has(ticker.symbol) && ticker.symbol === symbol
@@ -180,14 +215,12 @@ const Picks = () => {
     
 
     return (
-      //      <div className="flex flex-col min-h-screen">
-
       <div className="flex flex-col min-h-screen">
         <div className="h-12 bg-parchment border-b-4 border-b-parchment shadow-md flex space-x-4 p-4 items-center">
         <div className="ml-6 mr-12">
         <SortMenu setSortOption={setSortOption} />
         </div>
-        <PicksFilter tickers={categorizedTickers} onFilterApply={handleApplyFilters}/>
+        <PicksFilter tickers={categorizedTickers}  appliedFilters={selectedFilters} onFilterApply={applyFilters}/>
 
         <ChevronLeft className="w-6 h-6 ml-12 text-gray-700 cursor-pointer hover:text-black" 
         onClick={() => SetPrevOrNextPage(false)} />
@@ -211,14 +244,39 @@ const Picks = () => {
  
         <div className="ml-6 mr-6 mt-2 flex flex-grow"> 
  
-          <div ref={containerRef} className="w-3/10 bg-gray-50"> 
+          <div ref={containerRef} className="w-3/10 max-w-200 bg-gray-50"> 
           {currentTickers.map((ticker) => <TickerCard key={ticker.symbol} ticker={ticker} updateCategory={updateCategory} />)}
 
           </div>
 
-          <div className="w-7/10 bg-red-300"> 
+          <div className="w-7/10 p-4"> 
+      <CollapsibleSection title="Personal Research Notes">
+      <NotesEditor
+            initialContent={notes}
+            onSave={handleSaveNotes}
+          />
+      </CollapsibleSection>
 
-          {/* <TickerList tickers={}\> */}
+      {/* Strategies Section (Placeholder) */}
+      <CollapsibleSection title="Strategies">
+        <div className="h-[300px] flex items-center justify-center text-gray-400">
+          Coming soon...
+        </div>
+      </CollapsibleSection>
+
+      {/* Additional Section (Placeholder) */}
+      <CollapsibleSection title="Additional Information">
+        <div className="h-[200px] flex items-center justify-center text-gray-400">
+          Coming soon...
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Links">
+        <div className="h-[100px] flex items-center justify-center text-gray-400">
+          Coming soon...
+        </div>
+      </CollapsibleSection>
+
 
 
           </div>

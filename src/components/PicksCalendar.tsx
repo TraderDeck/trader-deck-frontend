@@ -56,7 +56,7 @@ const PicksDateSelector = ({ onDateChange }:Props) => {
   dateFormat="EEE, MMM dd, yyyy"
   customInput={
     <button
-      className="px-4 py-2 border rounded-lg bg-white shadow-sm focus:outline-none"
+      className="px-4 py-2 font-bold border rounded-lg bg-gray-100 shadow-sm focus:outline-none"
       tabIndex={-1}
       onMouseDown={(e) => e.preventDefault()}
       onBlur={(e) => e.target.blur()} 

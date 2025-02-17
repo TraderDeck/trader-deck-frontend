@@ -1,4 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Playfair+Display&family=Merriweather&family=Nunito&family=Poppins&family=Exo&family=Lato&family=Inter&family=Bebas+Neue&family=Raleway&family=Rubik&family=Orbitron&display=swap');
 @import "tailwindcss";
+
 
 @theme {
   --font-display: "Satoshi", "sans-serif";
@@ -10,6 +12,7 @@
   --color-yellow-green: oklch(77.1% 0.19 107.2); /* c3bb00 */
   --ease-fluid: cubic-bezier(0.3, 0, 0, 1);
   --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+
 }
 
 /* to prevent text selection when clicking buttons */

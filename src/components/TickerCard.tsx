@@ -1,10 +1,11 @@
 import { CategorizedTicker } from "../types/Ticker";
 import { TickerCategory} from "../types/Ticker";
-import {TICKER_CATEGORIES} from "../constants/Ticker";
+import {TICKER_CATEGORIES, SECTOR_FONT_MAP} from "../constants/Ticker";
 
 import { SquarePlay, Square, SquareSigma, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { cleanTickerName } from "../utils/tickerUtils";
+import { toCamelCase } from "../utils/stringUtils";
 
 
 interface Props {
@@ -12,9 +13,11 @@ interface Props {
   updateCategory: (symbol: string, category: TickerCategory) => void;
 }
 
-
 const TickerCard = ({ ticker, updateCategory }: Props) => {
   const [category, setCategory] = useState<TickerCategory>(ticker.category);
+  const tickerFont = ticker.sector? `text-l font-${toCamelCase(ticker.sector)}`: "text-l"; 
+
+  const fontFamily = ticker.sector? SECTOR_FONT_MAP[toCamelCase(ticker.sector)] || "sans-serif": "Satoshi, sans-serif";
 
 
   const handleClick = () => {
@@ -29,11 +32,10 @@ const TickerCard = ({ ticker, updateCategory }: Props) => {
     updateCategory(ticker.symbol, newCategory);
   };
 
-
   return (
 
     <div className="w-full h-auto flex relative shadow-md pt-4 pb-4 ">
-      <div className="w-1/5 h-full pt-4" >
+      <div className="w-1/5 h-full max-w-26" >
 
       {ticker.logoUrl &&
       <img
@@ -56,7 +58,8 @@ const TickerCard = ({ ticker, updateCategory }: Props) => {
  
           <p className="text-l font-bold ml-2"> {ticker.symbol}</p>
 
-          <p className="text-l"> {cleanTickerName(ticker.name)} </p>
+          <p className={tickerFont} style={{ fontFamily}}> {cleanTickerName(ticker.name)} </p>
+         {/* <p className={"text-l font-realEstate"}> {cleanTickerName(ticker.name)} </p> */}
 
           
             <div className="ml-auto top-0 w-1/8 h-full">

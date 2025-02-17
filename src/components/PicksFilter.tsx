@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Filter, X } from 'lucide-react';
-import { CategorizedTicker} from '../types/Ticker';
+import { CategorizedTicker, tickerPicksFilters} from '../types/Ticker';
 import { TickerCategory} from "../types/Ticker";
 import {TICKER_CATEGORIES} from "../constants/Ticker";
 import { cleanTickerName } from '../utils/tickerUtils';
@@ -9,21 +9,33 @@ import { SquarePlay, Square, SquareSigma } from "lucide-react";
 
 interface Props {
     tickers: CategorizedTicker[];
-    onFilterApply: (filteredTickers: CategorizedTicker[]) => void;
-}
+    appliedFilters: tickerPicksFilters;
+    onFilterApply: (selectedFilters: tickerPicksFilters) => void;
+  }
 
 
-const FilterMenu = ({ tickers, onFilterApply }: Props) => {
+const FilterMenu = ({ tickers, appliedFilters, onFilterApply }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const [selectedCategories, setSelectedCategories] = useState<TickerCategory[]>([]);
-  const [selectedTickers, setSelectedTickers] = useState<string[]>([]);
-  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
-  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [minMarketCap, setMinMarketCap] = useState('');
-  const [maxMarketCap, setMaxMarketCap] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<TickerCategory[]>(appliedFilters.categories || []);
+  const [selectedTickers, setSelectedTickers] = useState<string[]>(appliedFilters.tickers || []);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>(appliedFilters.sectors || []);
+  const [selectedIndustries, setSelectedIndustries] = useState<string[]>(appliedFilters.industries || []);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(appliedFilters.countries || []);
+  const [minMarketCap, setMinMarketCap] = useState<string>(appliedFilters.minMarketCap ?? '');
+  const [maxMarketCap, setMaxMarketCap] = useState<string>(appliedFilters.maxMarketCap ?? '');
+
+  useEffect(() => {
+    setSelectedCategories(appliedFilters.categories || []);
+    setSelectedTickers(appliedFilters.tickers || []);
+    setSelectedSectors(appliedFilters.sectors || []);
+    setSelectedIndustries(appliedFilters.industries || []);
+    setSelectedCountries(appliedFilters.countries || []);
+    setMinMarketCap(appliedFilters.minMarketCap || '');
+    setMaxMarketCap(appliedFilters.maxMarketCap || '');
+  }, [appliedFilters]);
+
   const [tickerInput, setTickerInput] = useState('');
   const [sectorInput, setSectorInput] = useState('');
   const [industryInput, setIndustryInput] = useState('');
@@ -53,20 +65,17 @@ const FilterMenu = ({ tickers, onFilterApply }: Props) => {
   };
   
   const applyFilters = () => {
-
-    const filteredTickers = tickers.filter(ticker => 
-      (selectedTickers.length === 0 || selectedTickers.includes(`${ticker.symbol}: ${cleanTickerName(ticker.name)}`)) &&
-      (selectedCategories.length === 0 || selectedCategories.includes(ticker.category)) &&
-      (selectedSectors.length === 0 || selectedSectors.includes(ticker.sector ?? '')) &&
-      (selectedIndustries.length === 0 || selectedIndustries.includes(ticker.industry ?? '')) &&
-      (selectedCountries.length === 0 || selectedCountries.includes(ticker.country ?? '')) &&
-      (!minMarketCap || (ticker.marketCap ?? 0) >= parseFloat(minMarketCap) * 1_000_000) &&
-      (!maxMarketCap || (ticker.marketCap ?? 0) <= parseFloat(maxMarketCap) * 1_000_000)
-    );
-
-
-    onFilterApply(filteredTickers);
     setIsMenuOpen(false);
+  
+    onFilterApply({
+      categories: selectedCategories,
+      tickers: selectedTickers,
+      sectors: selectedSectors,
+      industries: selectedIndustries,
+      countries: selectedCountries,
+      minMarketCap,
+      maxMarketCap
+    });
   };
 
   useEffect(() => {
