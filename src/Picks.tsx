@@ -9,10 +9,20 @@ import SortMenu from "./components/SortMenu";
 import PicksDateSelector from "./components/PicksCalendar";
 import { TICKER_CATEGORIES } from "./constants/Ticker";
 import NotesEditor from "./components/ui/NotesEditor";
-
+import {
+  fetchResearchNotesForTickers,
+  fetchResearchNoteForTicker,
+  saveResearchNote
+} from "./api/researchNoteService"; 
 import { CollapsibleSection } from "./components/ui/CollapsibleSection";
+import { act } from "react-dom/test-utils";
+
+
+const NBR_TICKERS_PER_PAGE = 5;
 
 const Picks = () => {
+
+  /*============= Active elements ==============*/
 
     const [filters, setFilters] = useState<Record<string, any>>({
       symbol: "",
@@ -21,15 +31,18 @@ const Picks = () => {
       sector: "",
       marketCapMin: "",
     });
+
     const [selectedDate, setSelectedDate] = useState<string>(() => {
       const today = new Date();
       return today.toISOString().split("T")[0]; 
     });
 
+    const [activeTicker, setActiveTicker] = useState<string | null>(null);
+
+
     //For testing to get tickers from db (this will get replaced)
     const [submittedFilters, setSubmittedFilters] = useState<null | typeof filters>(null);
     const { tickers, loading, error } = useTickers(submittedFilters);
-    //
 
     const [categorizedTickers, setCategorizedTickers] = useState<CategorizedTicker[]>([]);
 
@@ -39,7 +52,7 @@ const Picks = () => {
     
     /*============= Pagination ==============*/
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [itemsPerPage, setItemsPerPage] = useState(NBR_TICKERS_PER_PAGE);
     const containerRef = useRef<HTMLDivElement | null>(null); 
     const [inputValue, setInputValue] = useState("1");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -55,12 +68,28 @@ const Picks = () => {
       maxMarketCap: ''
     });
 
-    const [notes, setNotes] = useState(""); // Store notes for the selected ticker
+    /*============= Research Notes ==============*/
+    const [researchNotes, setResearchNotes] = useState<Record<string, string>>({});
+    // const [notes, setNotes] = useState(""); // Store notes for the selected ticker
+    // const [researchNoteLoading, setResearchNoteLoading] = useState(false);
 
-    const handleSaveNotes = (newNotes: string) => {
-      setNotes(newNotes);
-      console.log("Saved Notes:", newNotes); // Replace with an API call to persist data
-    };
+
+
+    const handleSaveNote = async (content: string) => {
+      if (!activeTicker) return;
+
+      const success = await saveResearchNote(activeTicker, content);
+      if (success) {
+          alert("Research note saved!");
+
+          setResearchNotes(prev => ({
+              ...prev,
+              [activeTicker]: content
+          }));
+      } else {
+          alert("Failed to save research note.");
+      }
+  };
 
 
     const applyFilters = (filters: tickerPicksFilters) => {
@@ -154,6 +183,14 @@ const Picks = () => {
 
       setCategorizedTickers(tickersWithCategories);
       setFilteredTickers(tickersWithCategories);
+
+
+      // prefetch research notes for the first page tickers
+      const prefetchTickers = tickers.slice(0, NBR_TICKERS_PER_PAGE).map(t => t.symbol);
+        fetchResearchNotesForTickers(prefetchTickers).then(notes => {
+            setResearchNotes(prev => ({ ...prev, ...notes }));
+        });
+
     }, [tickers]); 
 
     const handlePageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,9 +222,7 @@ const Picks = () => {
     const handleDateChange = (date: Date) => {
       const formattedDate = date.toISOString().split("T")[0]; // Convert Date to 'YYYY-MM-DD'
       setSelectedDate(formattedDate);
-  
-      console.log("Selected Date (DB Format):", formattedDate);
-    };
+      };
 
     const updateCategory = (symbol: string, category: TickerCategory) => {
       const currentTickerSymbols = new Set(currentTickers.map((t) => t.symbol));
@@ -212,6 +247,19 @@ const Picks = () => {
         )
       );
     };
+
+    const handleTickerClick = async (tickerSymbol: string) => {
+      console.log("to be active ticker: ", tickerSymbol); 
+      setActiveTicker(tickerSymbol);
+
+      console.log("research Notes are: ", researchNotes); 
+      if (researchNotes[tickerSymbol] !== undefined) return;
+
+      const noteContent = await fetchResearchNoteForTicker(tickerSymbol);
+      console.log("fetches research notes are: ", noteContent);
+      console.log("active ticker is: ", activeTicker);
+      setResearchNotes(prev => ({ ...prev, [tickerSymbol]: noteContent }));
+  };
     
 
     return (
@@ -245,16 +293,21 @@ const Picks = () => {
         <div className="ml-6 mr-6 mt-2 flex flex-grow"> 
  
           <div ref={containerRef} className="w-3/10 max-w-200 bg-gray-50"> 
-          {currentTickers.map((ticker) => <TickerCard key={ticker.symbol} ticker={ticker} updateCategory={updateCategory} />)}
+          {currentTickers.map((ticker) => <TickerCard 
+          key={ticker.symbol} 
+          ticker={ticker} 
+          updateCategory={updateCategory} 
+          onClick={handleTickerClick}
+          />)}
 
           </div>
 
           <div className="w-7/10 p-4"> 
       <CollapsibleSection title="Personal Research Notes">
-      <NotesEditor
-            initialContent={notes}
-            onSave={handleSaveNotes}
-          />
+        <NotesEditor
+              initialContent={activeTicker? researchNotes[activeTicker]: ''}
+              onSave={handleSaveNote}
+            />
       </CollapsibleSection>
 
       {/* Strategies Section (Placeholder) */}

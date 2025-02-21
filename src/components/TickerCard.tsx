@@ -11,9 +11,10 @@ import { toCamelCase } from "../utils/stringUtils";
 interface Props {
   ticker: CategorizedTicker;
   updateCategory: (symbol: string, category: TickerCategory) => void;
+  onClick: (symbol: string) => void;
 }
 
-const TickerCard = ({ ticker, updateCategory }: Props) => {
+const TickerCard = ({ ticker, updateCategory, onClick }: Props) => {
   const [category, setCategory] = useState<TickerCategory>(ticker.category);
   const tickerFont = ticker.sector? `text-l font-${toCamelCase(ticker.sector)}`: "text-l"; 
 
@@ -34,8 +35,11 @@ const TickerCard = ({ ticker, updateCategory }: Props) => {
 
   return (
 
-    <div className="w-full h-auto flex relative shadow-md pt-4 pb-4 ">
-      <div className="w-1/5 h-full max-w-26" >
+    <div 
+    className="w-full h-auto flex relative shadow-md pt-4 pb-4 cursor-pointer transition duration-200 border-2 border-transparent hover:border-dark-green"
+    onClick={() => onClick(ticker.symbol)}
+    >
+      <div className="w-1/5 h-full max-w-26 pl-2" >
 
       {ticker.logoUrl &&
       <img

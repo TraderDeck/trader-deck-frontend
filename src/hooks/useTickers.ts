@@ -10,7 +10,6 @@ const useTickers = (filters: Record<string, any> | null) => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    console.log("api trying to get called...filters are", filters);
     if (!filters || Object.values(filters).every(value => !value)) return; 
 
     const filteredFilters =  Object.fromEntries(
@@ -30,7 +29,6 @@ const useTickers = (filters: Record<string, any> | null) => {
             logoUrl: logoUrls.find((logo) => logo.key.includes(ticker.symbol))?.url || "",
           }));
 
-          console.log(updatedTickers);
           setTickers(updatedTickers); 
       }
   })

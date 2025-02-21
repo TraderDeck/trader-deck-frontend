@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import BulletList from "@tiptap/extension-bullet-list";
@@ -24,7 +24,7 @@ const NotesEditor = ({ initialContent, onSave }: Props) => {
 
   const editor = useEditor({
     extensions: [StarterKit, Document, Paragraph, BulletList, ListItem, Text, Color, TextStyle, FontSize, UnderlineExtension],
-    content,
+    content, 
     onUpdate: ({ editor }) => {
       setContent(editor.getHTML());
     },
@@ -35,6 +35,13 @@ const NotesEditor = ({ initialContent, onSave }: Props) => {
     },
   });
 
+  useEffect(() => {    
+    if (editor && initialContent !== undefined) {
+      editor.commands.setContent(initialContent); 
+    }
+  }, [initialContent, editor]); 
+
+
   const handleClickOutside = (event: MouseEvent) => {
     if (editorRef.current && !editorRef.current.contains(event.target as Node)) {
       setIsFocused(false);
@@ -42,24 +49,15 @@ const NotesEditor = ({ initialContent, onSave }: Props) => {
   };
 
   const handleEditorClick = () => {
-
     const isSelectingText = window.getSelection()?.toString().length !== 0;
     if (isSelectingText) return; 
 
-    if ( editor?.isEmpty) {
+    if (editor?.isEmpty) {
       editor.commands.focus("start");
     }
   };
 
-  // const handleEditorClick = () => {
-  //   const isSelectingText = window.getSelection()?.toString().length !== 0;
-  
-  //   if (!isSelectingText && !editor?.view.hasFocus()) {
-  //     editor?.commands.focus();
-  //   }
-  // };
-
-  React.useEffect(() => {
+  useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -71,8 +69,7 @@ const NotesEditor = ({ initialContent, onSave }: Props) => {
   }
 
   return (
-    //onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-    <div ref={editorRef} className=" pt-2 pl-4 pb-4 border rounded-lg w-full bg-white shadow-md" onFocus={() => setIsFocused(true)} onClick={handleEditorClick}>
+    <div ref={editorRef} className="pt-2 pl-4 pb-4 border rounded-lg w-full bg-white shadow-md" onFocus={() => setIsFocused(true)} onClick={handleEditorClick}>
       {isFocused && (
         <div className="border-b pb-1 mb-2 flex gap-3 items-center">
           <button onClick={() => editor.chain().focus().toggleBold().run()} className="p-2 hover:text-blue-500">
@@ -104,12 +101,10 @@ const NotesEditor = ({ initialContent, onSave }: Props) => {
             <PaintBucket size={16} color="#3385ff" className="hover:opacity-80" />
           </button>
 
-        <button className="ml-10 p-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={() => onSave(content)}>
-          Save Notes
-        </button>
+          <button className="ml-10 p-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={() => onSave(content)}>
+            Save Notes
+          </button>
         </div>
-
-        
       )}
       <EditorContent editor={editor} className="rounded p-2 min-h-[200px] outline-none overflow-y-auto max-h-[200px]" />
     </div>
