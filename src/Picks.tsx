@@ -15,7 +15,9 @@ import {
   saveResearchNote
 } from "./api/researchNoteService"; 
 import { CollapsibleSection } from "./components/ui/CollapsibleSection";
-import { act } from "react-dom/test-utils";
+import {saveTickerCategory} from "./api/tickerCategoryService"; 
+import { getCurrentCategories } from "./api/tickerCategoryService";
+
 
 
 const NBR_TICKERS_PER_PAGE = 5;
@@ -70,10 +72,6 @@ const Picks = () => {
 
     /*============= Research Notes ==============*/
     const [researchNotes, setResearchNotes] = useState<Record<string, string>>({});
-    // const [notes, setNotes] = useState(""); // Store notes for the selected ticker
-    // const [researchNoteLoading, setResearchNoteLoading] = useState(false);
-
-
 
     const handleSaveNote = async (content: string) => {
       if (!activeTicker) return;
@@ -170,28 +168,42 @@ const Picks = () => {
         name: "",
         industry: "", 
         sector: "",
-        marketCapMin: "1000000000",
+        marketCapMin: "100000000000",
       });
     }, []); 
 
     //After tickers are retrieved
-    useEffect(()=> {
-      const tickersWithCategories = tickers.map((ticker) => ({
-        ...ticker,
-        category: TICKER_CATEGORIES.NONE,
-      })); 
+    useEffect(() => {
+      const fetchCategories = async () => {
+        try {
+          const symbols = tickers.map(ticker => ticker.symbol);
+          const response = await getCurrentCategories(symbols);
+          const categories = response.data; 
+          
+          const tickersWithCategories = tickers.map((ticker) => ({
+            ...ticker,
+            category: categories[ticker.symbol]?.category|| TICKER_CATEGORIES.NONE,
+          }));
 
-      setCategorizedTickers(tickersWithCategories);
-      setFilteredTickers(tickersWithCategories);
-
-
-      // prefetch research notes for the first page tickers
+    
+          setCategorizedTickers(tickersWithCategories);
+          setFilteredTickers(tickersWithCategories);
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+        }
+      };
+    
+      if (tickers.length > 0) {
+        fetchCategories();
+      }
+    
+      // Prefetch research notes for the first page tickers
       const prefetchTickers = tickers.slice(0, NBR_TICKERS_PER_PAGE).map(t => t.symbol);
-        fetchResearchNotesForTickers(prefetchTickers).then(notes => {
-            setResearchNotes(prev => ({ ...prev, ...notes }));
-        });
-
-    }, [tickers]); 
+      fetchResearchNotesForTickers(prefetchTickers).then(notes => {
+        setResearchNotes(prev => ({ ...prev, ...notes }));
+      });
+    
+    }, [tickers]);
 
     const handlePageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       setInputValue(event.target.value);
@@ -246,6 +258,10 @@ const Picks = () => {
             : ticker
         )
       );
+
+      
+      saveTickerCategory(symbol, category);
+
     };
 
     const handleTickerClick = async (tickerSymbol: string) => {

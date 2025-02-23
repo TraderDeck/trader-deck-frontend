@@ -36,10 +36,10 @@ const TickerCard = ({ ticker, updateCategory, onClick }: Props) => {
   return (
 
     <div 
-    className="w-full h-auto flex relative shadow-md pt-4 pb-4 cursor-pointer transition duration-200 border-2 border-transparent hover:border-dark-green"
+    className="w-full h-auto flex relative shadow-md pb-4 cursor-pointer transition duration-200 border-3 border-transparent rounded-md hover:border-dark-green"
     onClick={() => onClick(ticker.symbol)}
     >
-      <div className="w-1/5 h-full max-w-26 pl-2" >
+      <div className="w-1/5 h-full max-w-26 pt-4 pl-2" >
 
       {ticker.logoUrl &&
       <img
@@ -59,21 +59,23 @@ const TickerCard = ({ ticker, updateCategory, onClick }: Props) => {
       <div className="w-4/5 h-full flex flex-col">
         <div className="h-1/2 flex">
           <div className="w-full relative flex space-x-2">
- 
-          <p className="text-l font-bold ml-2"> {ticker.symbol}</p>
 
-          <p className={tickerFont} style={{ fontFamily}}> {cleanTickerName(ticker.name)} </p>
-         {/* <p className={"text-l font-realEstate"}> {cleanTickerName(ticker.name)} </p> */}
 
+            <div className="flex space-x-2 mt-4">
           
-            <div className="ml-auto top-0 w-1/8 h-full">
+              <p className="text-l font-bold ml-2 "> {ticker.symbol}</p>
+              <p className={tickerFont} style={{ fontFamily}}> {cleanTickerName(ticker.name)} </p>
+        
+            </div>
+          
+            <div className="ml-auto top-0 w-1/8 h-full mt-2">
             <button onClick={handleClick} className="flex ml-auto pr-2 items-center space-x-2 focus:outline-none">
                 {category === TICKER_CATEGORIES.PLAYING ? (
-                  <SquarePlay className="w-6 h-6 text-kelly-green" />
+                  <SquarePlay className="w-8 h-8 text-kelly-green" />
                 ) : category === TICKER_CATEGORIES.CONSIDERING ? (
-                  <SquareSigma className="w-6 h-6 text-yellow-green" />
+                  <SquareSigma className="w-8 h-8 text-yellow-green" />
                 ) : (
-                  <Square className="w-6 h-6 text-bittersweet-shimmer" />
+                  <Square className="w-8 h-8 text-bittersweet-shimmer" />
                 )}
               </button>
             </div>
