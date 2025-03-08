@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import BulletList from "@tiptap/extension-bullet-list";
@@ -11,9 +11,6 @@ import TextStyle from "@tiptap/extension-text-style";
 import FontSize from "@tiptap/extension-text-style";
 import Text from "@tiptap/extension-text";
 import { Bold, Italic, Underline, PaintBucket, List as ListIcon } from "lucide-react";
-
-import { useBlocker } from 'react-router-dom'; 
-
 
 
 interface Props {

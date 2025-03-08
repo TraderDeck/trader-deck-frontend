@@ -15,7 +15,6 @@ import {
   saveResearchNote
 } from "./api/researchNoteService"; 
 import {
-  fetchImplementationNotesForTickers,
   fetchImplementationNoteForTicker,
   saveImplementationNote
 } from "./api/implementationNoteService"; 
@@ -30,7 +29,7 @@ const INIT_IMPLEMENTATION_NOTE_CONTENT = "<ul><li><p><strong>When to buy  ? : </
 const Picks = () => {
 
   /*============= Active elements ==============*/
-    const [filters, setFilters] = useState<Record<string, any>>({
+    const [filters] = useState<Record<string, any>>({
       symbol: "",
       name: "",
       industry: "", 
@@ -38,16 +37,16 @@ const Picks = () => {
       marketCapMin: "",
     });
 
-    const [selectedDate, setSelectedDate] = useState<string>(() => {
-      const today = new Date();
-      return today.toISOString().split("T")[0]; 
-    });
+    // const [selectedDate, setSelectedDate] = useState<string>(() => {
+    //   const today = new Date();
+    //   return today.toISOString().split("T")[0]; 
+    // });
 
     const [activeTicker, setActiveTicker] = useState<CategorizedTicker | null>(null);
 
     //For testing to get tickers from db (this will get replaced)
     const [submittedFilters, setSubmittedFilters] = useState<null | typeof filters>(null);
-    const { tickers, loading, error } = useTickers(submittedFilters);
+    const { tickers} = useTickers(submittedFilters);
 
     const [categorizedTickers, setCategorizedTickers] = useState<CategorizedTicker[]>([]);
 
@@ -259,24 +258,13 @@ const Picks = () => {
 
     const handleDateChange = (date: Date) => {
       const formattedDate = date.toISOString().split("T")[0]; // Convert Date to 'YYYY-MM-DD'
-      setSelectedDate(formattedDate);
+      console.log(formattedDate);
+      // setSelectedDate(formattedDate);
     };
 
     const updateCategory = (symbol: string, category: TickerCategory) => {
 
       const currentTickerSymbols = new Set(currentTickers.map((t) => t.symbol));
-      const tickerToUpdate = currentTickers.find(
-        (ticker) => ticker.symbol === symbol
-      );
-
-      // if (tickerToUpdate?.category === TICKER_CATEGORIES.PLAYING
-      //   && 
-
-
-      // ) {
-
-
-      // }
 
       if (selectedFilters.categories.length > 0) {
         setFilteredTickers((prev = []) =>

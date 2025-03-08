@@ -13,7 +13,7 @@ const useTickers = (filters: Record<string, any> | null) => {
     if (!filters || Object.values(filters).every(value => !value)) return; 
 
     const filteredFilters =  Object.fromEntries(
-        Object.entries(filters).filter(([key, value]) => value !== "")
+        Object.entries(filters).filter(([_, value]) => value !== "")
       );
 
     setLoading(true);
