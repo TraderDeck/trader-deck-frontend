@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat&family=Playfair+Display&family=Merriweather&family=Nunito&family=Poppins&family=Exo&family=Lato&family=Inter&family=Bebas+Neue&family=Raleway&family=Rubik&family=Orbitron&display=swap');
 @import "tailwindcss";
 
+@plugin "@tailwindcss/typography";
 
 @theme {
   --font-display: "Satoshi", "sans-serif";
@@ -18,4 +19,9 @@
 /* to prevent text selection when clicking buttons */
 button, svg, .no-select {
   @apply select-none;
+}
+
+.ProseMirror ul li::marker {
+  color: black; 
+
 }

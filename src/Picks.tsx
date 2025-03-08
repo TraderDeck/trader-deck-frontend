@@ -14,18 +14,22 @@ import {
   fetchResearchNoteForTicker,
   saveResearchNote
 } from "./api/researchNoteService"; 
+import {
+  fetchImplementationNotesForTickers,
+  fetchImplementationNoteForTicker,
+  saveImplementationNote
+} from "./api/implementationNoteService"; 
 import { CollapsibleSection } from "./components/ui/CollapsibleSection";
 import {saveTickerCategory} from "./api/tickerCategoryService"; 
 import { getCurrentCategories } from "./api/tickerCategoryService";
 
 
-
 const NBR_TICKERS_PER_PAGE = 5;
+const INIT_IMPLEMENTATION_NOTE_CONTENT = "<ul><li><p><strong>When to buy  ? : </strong></p></li><li><p><strong>How much to buy ? :</strong></p></li><li><p><strong>When to sell ? :</strong></p></li></ul>";
 
 const Picks = () => {
 
   /*============= Active elements ==============*/
-
     const [filters, setFilters] = useState<Record<string, any>>({
       symbol: "",
       name: "",
@@ -39,8 +43,7 @@ const Picks = () => {
       return today.toISOString().split("T")[0]; 
     });
 
-    const [activeTicker, setActiveTicker] = useState<string | null>(null);
-
+    const [activeTicker, setActiveTicker] = useState<CategorizedTicker | null>(null);
 
     //For testing to get tickers from db (this will get replaced)
     const [submittedFilters, setSubmittedFilters] = useState<null | typeof filters>(null);
@@ -73,21 +76,40 @@ const Picks = () => {
     /*============= Research Notes ==============*/
     const [researchNotes, setResearchNotes] = useState<Record<string, string>>({});
 
-    const handleSaveNote = async (content: string) => {
+    const handleSaveResearchNote = async (content: string) => {
       if (!activeTicker) return;
 
-      const success = await saveResearchNote(activeTicker, content);
+      const success = await saveResearchNote(activeTicker.symbol, content);
       if (success) {
           alert("Research note saved!");
 
           setResearchNotes(prev => ({
               ...prev,
-              [activeTicker]: content
+              [activeTicker.symbol]: content
           }));
       } else {
           alert("Failed to save research note.");
       }
   };
+
+    /*============= Implementation Notes ==============*/
+      const [implementationNotes, setImplementationNotes] = useState<Record<string, string>>({});
+
+      const handleSaveImplementationNote = async (content: string) => {
+        if (!activeTicker) return;
+  
+        const success = await saveImplementationNote(activeTicker.symbol, content);
+        if (success) {
+            alert("Implementation note saved!");
+  
+            setImplementationNotes(prev => ({
+                ...prev,
+                [activeTicker.symbol]: content
+            }));
+        } else {
+            alert("Failed to save implementation note.");
+        }
+    };
 
 
     const applyFilters = (filters: tickerPicksFilters) => {
@@ -202,7 +224,11 @@ const Picks = () => {
       fetchResearchNotesForTickers(prefetchTickers).then(notes => {
         setResearchNotes(prev => ({ ...prev, ...notes }));
       });
-    
+
+      // // Prefetch implementation notes for the first page tickers
+      // I do not think this is a good idea since loading will take longer ...
+      // might remove prefetching of research notes also
+
     }, [tickers]);
 
     const handlePageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,10 +260,23 @@ const Picks = () => {
     const handleDateChange = (date: Date) => {
       const formattedDate = date.toISOString().split("T")[0]; // Convert Date to 'YYYY-MM-DD'
       setSelectedDate(formattedDate);
-      };
+    };
 
     const updateCategory = (symbol: string, category: TickerCategory) => {
+
       const currentTickerSymbols = new Set(currentTickers.map((t) => t.symbol));
+      const tickerToUpdate = currentTickers.find(
+        (ticker) => ticker.symbol === symbol
+      );
+
+      // if (tickerToUpdate?.category === TICKER_CATEGORIES.PLAYING
+      //   && 
+
+
+      // ) {
+
+
+      // }
 
       if (selectedFilters.categories.length > 0) {
         setFilteredTickers((prev = []) =>
@@ -249,7 +288,15 @@ const Picks = () => {
             )
             .filter(ticker => selectedFilters.categories.includes(ticker.category))
         );
-      }
+      } else {
+        setFilteredTickers((prev = []) =>
+          prev
+            .map((ticker) =>
+              currentTickerSymbols?.has(ticker.symbol) && ticker.symbol === symbol
+                ? { ...ticker, category }
+                : ticker
+        ));
+      }+
       
       setCategorizedTickers((prev) =>
         prev.map((ticker) =>
@@ -259,22 +306,30 @@ const Picks = () => {
         )
       );
 
-      
-      saveTickerCategory(symbol, category);
+      if (activeTicker?.symbol == symbol) {
+        setActiveTicker({...activeTicker, category: category});
+      }
 
+      saveTickerCategory(symbol, category);
     };
 
     const handleTickerClick = async (tickerSymbol: string) => {
-      console.log("to be active ticker: ", tickerSymbol); 
-      setActiveTicker(tickerSymbol);
+      const selectedTicker = currentTickers.find(
+        (ticker) => ticker.symbol === tickerSymbol
+      );
 
-      console.log("research Notes are: ", researchNotes); 
-      if (researchNotes[tickerSymbol] !== undefined) return;
+      setActiveTicker(selectedTicker || null);
 
-      const noteContent = await fetchResearchNoteForTicker(tickerSymbol);
-      console.log("fetches research notes are: ", noteContent);
-      console.log("active ticker is: ", activeTicker);
-      setResearchNotes(prev => ({ ...prev, [tickerSymbol]: noteContent }));
+      if (researchNotes[tickerSymbol] === undefined) {
+        const researchNoteContent = await fetchResearchNoteForTicker(tickerSymbol);
+        setResearchNotes(prev => ({ ...prev, [tickerSymbol]: researchNoteContent }));
+      }
+
+      if (selectedTicker?.category === TICKER_CATEGORIES.PLAYING && implementationNotes[tickerSymbol] === undefined){
+        const implementationNoteContent = await fetchImplementationNoteForTicker(tickerSymbol);
+        setImplementationNotes(prev => ({ ...prev, [tickerSymbol]: implementationNoteContent }));
+      }
+
   };
     
 
@@ -312,43 +367,55 @@ const Picks = () => {
           {currentTickers.map((ticker) => <TickerCard 
           key={ticker.symbol} 
           ticker={ticker} 
+          active = { ticker.symbol === activeTicker?.symbol}
           updateCategory={updateCategory} 
           onClick={handleTickerClick}
           />)}
 
           </div>
-
+          
+          { activeTicker && 
           <div className="w-7/10 p-4"> 
-      <CollapsibleSection title="Personal Research Notes">
-        <NotesEditor
-              initialContent={activeTicker? researchNotes[activeTicker]: ''}
-              onSave={handleSaveNote}
-            />
-      </CollapsibleSection>
+          
+          { activeTicker.category === TICKER_CATEGORIES.PLAYING &&
+           <CollapsibleSection title="Implementation Notes"
+           headerAdditionalClass = "bg-bittersweet-shimmer text-white"
+           >
+              <NotesEditor
+                initialContent={implementationNotes[activeTicker?.symbol] || INIT_IMPLEMENTATION_NOTE_CONTENT}
+                onSave={handleSaveImplementationNote}
+              />
+            </CollapsibleSection>
 
-      {/* Strategies Section (Placeholder) */}
-      <CollapsibleSection title="Strategies">
-        <div className="h-[300px] flex items-center justify-center text-gray-400">
-          Coming soon...
-        </div>
-      </CollapsibleSection>
+          }
+          
+            <CollapsibleSection title="Research Notes">
+              <NotesEditor
+                initialContent={activeTicker? researchNotes[activeTicker.symbol]: ''}
+                onSave={handleSaveResearchNote}
+              />
+            </CollapsibleSection>
 
-      {/* Additional Section (Placeholder) */}
-      <CollapsibleSection title="Additional Information">
-        <div className="h-[200px] flex items-center justify-center text-gray-400">
-          Coming soon...
-        </div>
-      </CollapsibleSection>
+            <CollapsibleSection title="Strategies">
+              <div className="h-[300px] flex items-center justify-center text-gray-400">
+                Coming soon...
+              </div>
+            </CollapsibleSection>
 
-      <CollapsibleSection title="Links">
-        <div className="h-[100px] flex items-center justify-center text-gray-400">
-          Coming soon...
-        </div>
-      </CollapsibleSection>
+            <CollapsibleSection title="Additional Information">
+              <div className="h-[200px] flex items-center justify-center text-gray-400">
+                Coming soon...
+              </div>
+            </CollapsibleSection>
 
-
+            <CollapsibleSection title="Links">
+              <div className="h-[100px] flex items-center justify-center text-gray-400">
+                Coming soon...
+              </div>
+            </CollapsibleSection>
 
           </div>
+          }
 
         </div>
 

@@ -12,6 +12,10 @@ import FontSize from "@tiptap/extension-text-style";
 import Text from "@tiptap/extension-text";
 import { Bold, Italic, Underline, PaintBucket, List as ListIcon } from "lucide-react";
 
+import { useBlocker } from 'react-router-dom'; 
+
+
+
 interface Props {
   initialContent?: string;
   onSave: (content: string) => void;
@@ -20,6 +24,8 @@ interface Props {
 const NotesEditor = ({ initialContent, onSave }: Props) => {
   const [content, setContent] = useState(initialContent || "");
   const [isFocused, setIsFocused] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
   const editorRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
@@ -27,13 +33,32 @@ const NotesEditor = ({ initialContent, onSave }: Props) => {
     content, 
     onUpdate: ({ editor }) => {
       setContent(editor.getHTML());
+      setIsDirty(true);
     },
     editorProps: {
       attributes: {
-        class: "outline-none cursor-text",
+        class: "outline-none cursor-text prose max-w-none [&_ol]:list-decimal [&_ul]:list-disc",
       },
     },
   });
+
+  useEffect(() => {
+    const handleNavigation = (event: any) => {
+      if (isDirty) {
+        const confirmLeave = window.confirm("You have unsaved changes. Do you really want to leave?");
+        if (!confirmLeave) {
+          event.preventDefault();
+          return;
+        }
+      }
+    };
+    window.addEventListener("popstate", handleNavigation);
+    return () => {
+      window.removeEventListener("popstate", handleNavigation);
+    };
+  }, [isDirty]);
+
+
 
   useEffect(() => {    
     if (editor && initialContent !== undefined) {

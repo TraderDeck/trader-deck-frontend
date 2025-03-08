@@ -43,7 +43,7 @@ export const saveResearchNote = async (tickerSymbol: string, content: string): P
 
 export const deleteResearchNote = async (noteId: string) => {
     try {
-      await apiClient.delete(`/api/v1/research-notes/${noteId}`);
+      await apiClient.delete(`/research-notes/${noteId}`);
     } catch (error) {
       console.error(" Error deleting research note:", error);
       throw error;

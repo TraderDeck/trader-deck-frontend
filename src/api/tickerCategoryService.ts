@@ -12,7 +12,6 @@ const updateTickerCategoryApi = (tickerSymbol: string, category: string) => {
 export const saveTickerCategory = debounce(updateTickerCategoryApi, DEBOUNCER_DELAY);
 
 export const getCurrentCategories = (tickerSymbols: string[]) => {
-    console.log("Params to be passed are: ", { params: { tickerSymbols } });
 const categories = apiClient.get('/ticker-category/current-all', { params: { 
     tickerSymbols: tickerSymbols.join(","),
 

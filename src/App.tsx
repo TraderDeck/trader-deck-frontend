@@ -1,13 +1,44 @@
-import { BrowserRouter as Router} from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { AppRoutes } from "./AppRoutes";
+import {jwtDecode} from "jwt-decode";
 
+interface DecodedToken {
+  exp: number;
+  username: string;
+  email: string;
+}
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("token"));
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        console.log("decoded token..... is", decoded);
+        console.log("now is......", Date.now());
+        const isTokenExpired = decoded.exp * 1000 < Date.now();
+
+        if (isTokenExpired) {
+          // Token expired, log out user
+          localStorage.removeItem("token");
+          localStorage.removeItem("username");
+          localStorage.removeItem("email");
+          setIsLoggedIn(false);
+        } else {
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        localStorage.removeItem("email");
+        setIsLoggedIn(false);
+      }
+    }
   }, []);
 
   return (

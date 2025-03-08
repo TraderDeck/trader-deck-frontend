@@ -10,11 +10,12 @@ import { toCamelCase } from "../utils/stringUtils";
 
 interface Props {
   ticker: CategorizedTicker;
+  active: boolean;
   updateCategory: (symbol: string, category: TickerCategory) => void;
   onClick: (symbol: string) => void;
 }
 
-const TickerCard = ({ ticker, updateCategory, onClick }: Props) => {
+const TickerCard = ({ ticker, active, updateCategory, onClick }: Props) => {
   const [category, setCategory] = useState<TickerCategory>(ticker.category);
   const tickerFont = ticker.sector? `text-l font-${toCamelCase(ticker.sector)}`: "text-l"; 
 
@@ -36,7 +37,9 @@ const TickerCard = ({ ticker, updateCategory, onClick }: Props) => {
   return (
 
     <div 
-    className="w-full h-auto flex relative shadow-md pb-4 cursor-pointer transition duration-200 border-3 border-transparent rounded-md hover:border-dark-green"
+    className={`w-full h-auto flex relative shadow-md pb-4 cursor-pointer transition duration-200 
+      border-3 rounded-md hover:border-gray-400 
+      ${active ? 'border-dark-green' : 'border-transparent'}`}
     onClick={() => onClick(ticker.symbol)}
     >
       <div className="w-1/5 h-full max-w-26 pt-4 pl-2" >
@@ -69,7 +72,11 @@ const TickerCard = ({ ticker, updateCategory, onClick }: Props) => {
             </div>
           
             <div className="ml-auto top-0 w-1/8 h-full mt-2">
-            <button onClick={handleClick} className="flex ml-auto pr-2 items-center space-x-2 focus:outline-none">
+            <button onClick={(e) => {
+              e.stopPropagation();
+              handleClick();
+            }} 
+            className="flex ml-auto pr-2 items-center space-x-2 focus:outline-none">
                 {category === TICKER_CATEGORIES.PLAYING ? (
                   <SquarePlay className="w-8 h-8 text-kelly-green" />
                 ) : category === TICKER_CATEGORIES.CONSIDERING ? (
