@@ -19,7 +19,7 @@ jobs:
           node-version: 18  # Ensure correct Node.js version
           cache: 'yarn'  # Enable caching for Yarn dependencies
 
-      - name: Enable Corepack and Install Yarn 4
+      - name: Enable Corepack and Install Yarn 4.6.0
         run: |
           corepack enable
           corepack prepare yarn@4.6.0 --activate
