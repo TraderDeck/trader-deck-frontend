@@ -34,3 +34,6 @@ Thumbs.db
 # Optional: Lint and test coverage
 eslintcache
 coverage/
+
+# Ignore build output
+build/
