@@ -41,6 +41,7 @@ jobs:
           echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > .env
           echo "VITE_LOCAL_AWS=${{ secrets.VITE_LOCAL_AWS }}" >> .env
           echo "VITE_S3_BUCKET_NAME=${{ secrets.VITE_S3_BUCKET_NAME }}" >> .env
+          echo "VITE_CLOUDFRONT_URL=${{ secrets.VITE_CLOUDFRONT_URL }}" >> .env
           echo "Generated .env file:"
           cat .env  # Debugging: Verify .env content
 
