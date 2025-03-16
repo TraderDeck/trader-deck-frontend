@@ -4,6 +4,9 @@ import { Ticker } from "../types/Ticker";
 import { fetchTickerLogosPresignedUrls } from "../api/s3/getPresignedUrls";
 
 
+const CLOUDFRONT_URL = import.meta.env.CLOUDFRONT_URL;
+const LOCAL_AWS = import.meta.env.VITE_LOCAL_AWS;
+
 const useTickers = (filters: Record<string, any> | null) => {
   const [tickers, setTickers] = useState<Ticker[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -20,17 +23,25 @@ const useTickers = (filters: Record<string, any> | null) => {
     fetchTickers(filteredFilters)
       .then(async (tickerList) => {
 
+        if ( LOCAL_AWS === "false" ) {
+          const updatedTickers = tickerList.map((ticker) => ({
+            ...ticker,
+            logoUrl: `${CLOUDFRONT_URL}/logos/${ticker.symbol}.png`,
+          }));
+          setTickers(updatedTickers);
+        }
+        else {
         const tickerSymbols = tickerList.map((ticker) => ticker.symbol);
-
         if (tickerSymbols.length > 0) {
           const logoUrls = await fetchTickerLogosPresignedUrls(tickerSymbols);
           const updatedTickers = tickerList.map((ticker) => ({
             ...ticker,
             logoUrl: logoUrls.find((logo) => logo.key.includes(ticker.symbol))?.url || "",
-          }));
+        }));
 
           setTickers(updatedTickers); 
       }
+    }
   })
       .catch(setError)
       .finally(() => setLoading(false));

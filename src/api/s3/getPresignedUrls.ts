@@ -3,12 +3,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3 = new S3Client({
   region: import.meta.env.VITE_AWS_REGION,
-  credentials: import.meta.env.VITE_LOCAL_AWS === "true"
-    ? {
+  credentials: {
         accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID as string,
         secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY as string,
       }
-    : undefined,
 });
 
 const BUCKET_NAME = import.meta.env.VITE_S3_BUCKET_NAME as string;
