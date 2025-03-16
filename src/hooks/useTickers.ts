@@ -26,7 +26,7 @@ const useTickers = (filters: Record<string, any> | null) => {
         if ( LOCAL_AWS === "false" ) {
           const updatedTickers = tickerList.map((ticker) => ({
             ...ticker,
-            logoUrl: `${CLOUDFRONT_URL}/logos/${ticker.symbol}.png`,
+            logoUrl: `/logos/${ticker.symbol}.png`,
           }));
           setTickers(updatedTickers);
         }
