@@ -1,3 +1,5 @@
+import { featureFlags } from "./featureFlags/values";
+
 import { Route, Link, Routes, useNavigate } from "react-router-dom";
 import Home from "./Home";
 import Picks from "./Picks";
@@ -61,7 +63,7 @@ export function AppRoutes({ isLoggedIn, setIsLoggedIn }: AppRoutesProps) {
           <Route path="/" element={<Home />} />
           {isLoggedIn && <Route path="/picks" element={<Picks />} />}
           {!isLoggedIn && <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />}
-          {!isLoggedIn && <Route path="/register" element={<Register setIsLoggedIn={setIsLoggedIn} />} />}
+          {featureFlags.SHOW_REGISTER && !isLoggedIn &&  <Route path="/register" element={<Register setIsLoggedIn={setIsLoggedIn} />} />}
         </Routes>
       </>
     );
