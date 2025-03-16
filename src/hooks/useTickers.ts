@@ -4,7 +4,7 @@ import { Ticker } from "../types/Ticker";
 import { fetchTickerLogosPresignedUrls } from "../api/s3/getPresignedUrls";
 
 
-const CLOUDFRONT_URL = import.meta.env.VITE_CLOUDFRONT_URL;
+// const CLOUDFRONT_URL = import.meta.env.VITE_CLOUDFRONT_URL;
 const LOCAL_AWS = import.meta.env.VITE_LOCAL_AWS;
 
 const useTickers = (filters: Record<string, any> | null) => {
