@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sparkles, TrendingUp, DollarSign, Newspaper, AlertCircle, Loader2, Target, TrendingDown } from 'lucide-react';
 import TickerSelector from './components/TickerSelector';
 import { Ticker } from './types/Ticker';
 import useTickers from './hooks/useTickers';
-import { analyzeStock, AnalysisResponse, AgentResponse } from './api/analysisService';
+import { startAnalysis, getAnalysisResult, AnalysisResponse, AgentResponse } from './api/analysisService';
 import { cleanTickerName } from './utils/tickerUtils';
+import { useToast } from './context/ToastContext';
 
 const renderInline = (line: string) => {
   const parts = line.split(/(\*\*[^*]+\*\*)/g);
@@ -206,6 +207,12 @@ const Agents = () => {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const activeJobIdRef = useRef<string | null>(null);
+  const cancelRef = useRef<boolean>(false);
+  const { push: pushToast } = useToast();
 
   useEffect(() => {
     setSubmittedFilters({
@@ -217,29 +224,107 @@ const Agents = () => {
     });
   }, []);
 
-  const handleTickerSelect = (ticker: Ticker) => {
-    setSelectedTicker(ticker);
-    setAnalysis(null);
-    setError(null);
+  useEffect(() => {
+    if (isLoading) {
+      setElapsedMs(0);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (!status) return;
+    if (status === 'COMPLETED') pushToast({ message: 'Analysis complete', type: 'success' });
+    else if (status === 'ERROR') pushToast({ message: 'Analysis failed', type: 'error' });
+    else if (status === 'TIMEOUT') pushToast({ message: 'Analysis still running server-side (timeout)', type: 'warning' });
+    else if (status === 'CANCELLED') pushToast({ message: 'Analysis cancelled', type: 'info' });
+  }, [status, pushToast]);
+
+  // Elapsed timer
+  useEffect(() => {
+    if (!isLoading) return;
+    const id = setInterval(() => setElapsedMs(e => e + 1000), 1000);
+    return () => clearInterval(id);
+  }, [isLoading]);
+
+  const pollJob = (jid: string, started: number) => {
+    if (cancelRef.current) return; // cancelled
+    getAnalysisResult(jid).then(r => {
+      if (cancelRef.current || activeJobIdRef.current !== jid) return; // stale
+      if (r.done && r.result) {
+        setAnalysis(r.result);
+        setIsLoading(false);
+        setStatus('COMPLETED');
+        return;
+      }
+      const now = Date.now();
+      const elapsed = now - started;
+      if (elapsed >= 4 * 60 * 1000) { // 4 minute timeout
+        setIsLoading(false);
+        setStatus('TIMEOUT');
+        return;
+      }
+      // progressive backoff
+      const delay = elapsed < 30_000 ? 2000 : 4000;
+      setTimeout(() => pollJob(jid, started), delay);
+    }).catch(err => {
+      if (cancelRef.current) return;
+      setIsLoading(false);
+      setStatus('ERROR');
+      setError('Failed while polling analysis job.');
+      console.error(err);
+    });
   };
 
   const handleAnalyze = async () => {
-    if (!selectedTicker) return;
-
-    setIsLoading(true);
+    if (!selectedTicker || isLoading) return;
+    cancelRef.current = false;
+    activeJobIdRef.current = null;
+    setJobId(null);
+    setAnalysis(null);
     setError(null);
-
+    setStatus('QUEUING');
+    setIsLoading(true);
     try {
-      const result = await analyzeStock({
-        tickerSymbol: selectedTicker.symbol,
-        userPrompt: ''
-      });
-      setAnalysis(result);
-    } catch (error) {
-      setError("Failed to analyze stock. Please try again.");
-    } finally {
+      const startRes = await startAnalysis({ tickerSymbol: selectedTicker.symbol, userPrompt: '' });
+      if (typeof startRes !== 'string') {
+        // Synchronous response (legacy backend path)
+        setAnalysis(startRes.result);
+        setIsLoading(false);
+        setStatus('COMPLETED');
+        return;
+      }
+      const jid = startRes;
+      setJobId(jid);
+      activeJobIdRef.current = jid;
+      setStatus('IN_PROGRESS');
+      const started = Date.now();
+      pollJob(jid, started);
+    } catch (e) {
       setIsLoading(false);
+      setStatus('ERROR');
+      setError('Failed to start analysis.');
     }
+  };
+
+  const handleCancel = () => {
+    if (!isLoading) return;
+    cancelRef.current = true;
+    activeJobIdRef.current = null;
+    setIsLoading(false);
+    setStatus('CANCELLED');
+  };
+
+  const handleRetry = () => {
+    if (selectedTicker && !isLoading) handleAnalyze();
+  };
+
+  const handleTickerSelect = (ticker: Ticker) => {
+    cancelRef.current = true; // cancel any active polling
+    activeJobIdRef.current = null;
+    setJobId(null);
+    setStatus(null);
+    setSelectedTicker(ticker);
+    setAnalysis(null);
+    setError(null);
   };
 
   return (
@@ -269,7 +354,8 @@ const Agents = () => {
             
             {/* Selected Ticker Display - To the right of search */}
             {selectedTicker && (
-              <div className="flex-1 p-3 bg-blue-50 border border-blue-200 rounded-lg mr-16">
+              <div className="flex-1 p-3 bg-blue-50 border border-blue-200 rounded-lg mr-16 relative">
+                {/* Removed status chip for simplified UI */}
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-semibold text-blue-900">{selectedTicker.symbol}</span>
@@ -304,6 +390,7 @@ const Agents = () => {
                   </div>
                 )}
               </button>
+              {/* Removed progress bar, cancel, retry, status, and jobId displays for simplified UI */}
             </div>
           </div>
         </div>
@@ -319,6 +406,23 @@ const Agents = () => {
         )}
 
         {/* Analysis Results */}
+        {isLoading && !analysis && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {[0,1,2].map(i => (
+              <div key={i} className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-gray-200 animate-pulse">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-6 w-40 bg-gray-200 rounded" />
+                  <div className="h-6 w-12 bg-gray-200 rounded" />
+                </div>
+                <div className="space-y-3">
+                  <div className="h-4 w-full bg-gray-200 rounded" />
+                  <div className="h-4 w-5/6 bg-gray-200 rounded" />
+                  <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {analysis && (() => {
           const technicalAgent = getAgentByType(analysis.agents, 'technicals');
           const fundamentalsAgent = getAgentByType(analysis.agents, 'fundamentals');

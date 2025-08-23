@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { AppRoutes } from "./AppRoutes";
 import { jwtDecode } from "jwt-decode";
 import { PicksStateProvider } from './context/PicksContext';
+import { ToastProvider } from './context/ToastContext';
 
 interface DecodedToken {
   exp: number;
@@ -44,9 +45,11 @@ function App() {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        <PicksStateProvider>
-          <AppRoutes isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-        </PicksStateProvider>
+        <ToastProvider>
+          <PicksStateProvider>
+            <AppRoutes isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+          </PicksStateProvider>
+        </ToastProvider>
         <footer className="w-full bg-dark-green text-parchment py-4">
           <div className="container mx-auto flex flex-col md:flex-row items-center justify-between px-2">
             <nav className="flex text-sm">
