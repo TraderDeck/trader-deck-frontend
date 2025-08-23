@@ -7,6 +7,11 @@ import { useState } from "react";
 import { cleanTickerName } from "../utils/tickerUtils";
 import { toCamelCase } from "../utils/stringUtils";
 
+const CATEGORY_TOOLTIPS: Record<TickerCategory, string> = {
+  [TICKER_CATEGORIES.PLAYING]: "Playing: To be executed",
+  [TICKER_CATEGORIES.CONSIDERING]: "Considering: Under research",
+  [TICKER_CATEGORIES.NONE]: "None: No action taken",
+};
 
 interface Props {
   ticker: CategorizedTicker;
@@ -72,11 +77,12 @@ const TickerCard = ({ ticker, active, updateCategory, onClick }: Props) => {
             </div>
           
             <div className="ml-auto top-0 w-1/8 h-full mt-2">
+            <div className="relative group flex ml-auto pr-2 items-center">
             <button onClick={(e) => {
               e.stopPropagation();
               handleClick();
             }} 
-            className="flex ml-auto pr-2 items-center space-x-2 focus:outline-none">
+            className="flex items-center space-x-2 focus:outline-none">
                 {category === TICKER_CATEGORIES.PLAYING ? (
                   <SquarePlay className="w-8 h-8 text-kelly-green" />
                 ) : category === TICKER_CATEGORIES.CONSIDERING ? (
@@ -85,6 +91,10 @@ const TickerCard = ({ ticker, active, updateCategory, onClick }: Props) => {
                   <Square className="w-8 h-8 text-bittersweet-shimmer" />
                 )}
               </button>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap rounded bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-75 z-50">
+                {CATEGORY_TOOLTIPS[category]}
+              </span>
+            </div>
             </div>
 
           </div>

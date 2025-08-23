@@ -4,7 +4,6 @@ import { Ticker } from "../types/Ticker";
 import { fetchTickerLogosPresignedUrls } from "../api/s3/getPresignedUrls";
 
 
-// const CLOUDFRONT_URL = import.meta.env.VITE_CLOUDFRONT_URL;
 const LOCAL_AWS = import.meta.env.VITE_LOCAL_AWS;
 
 const useTickers = (filters: Record<string, any> | null) => {
@@ -34,16 +33,18 @@ const useTickers = (filters: Record<string, any> | null) => {
         const tickerSymbols = tickerList.map((ticker) => ticker.symbol);
         if (tickerSymbols.length > 0) {
           const logoUrls = await fetchTickerLogosPresignedUrls(tickerSymbols);
-          const updatedTickers = tickerList.map((ticker) => ({
-            ...ticker,
-            logoUrl: logoUrls.find((logo) => logo.key.includes(ticker.symbol))?.url || "",
-        }));
-
+          const updatedTickers = tickerList.map((ticker) => {
+            const match = logoUrls.find((logo) => logo.key === `${ticker.symbol}.png`);
+            return {
+              ...ticker,
+              logoUrl: match?.url || "",
+            };
+          });
           setTickers(updatedTickers); 
       }
     }
   })
-      .catch(setError)
+      .catch(err => { setError(err); })
       .finally(() => setLoading(false));
 
   

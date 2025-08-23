@@ -37,3 +37,6 @@ coverage/
 
 # Ignore build output
 build/
+
+#login test file
+login-test.txt

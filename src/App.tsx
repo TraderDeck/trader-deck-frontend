@@ -1,7 +1,8 @@
 import { BrowserRouter as Router } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { AppRoutes } from "./AppRoutes";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
+import { PicksStateProvider } from './context/PicksContext';
 
 interface DecodedToken {
   exp: number;
@@ -23,7 +24,6 @@ function App() {
         const isTokenExpired = decoded.exp * 1000 < Date.now();
 
         if (isTokenExpired) {
-          // Token expired, log out user
           localStorage.removeItem("token");
           localStorage.removeItem("username");
           localStorage.removeItem("email");
@@ -44,8 +44,9 @@ function App() {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        <AppRoutes isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-
+        <PicksStateProvider>
+          <AppRoutes isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+        </PicksStateProvider>
         <footer className="w-full bg-dark-green text-parchment py-4">
           <div className="container mx-auto flex flex-col md:flex-row items-center justify-between px-2">
             <nav className="flex text-sm">

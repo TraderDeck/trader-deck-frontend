@@ -3,6 +3,7 @@ import { featureFlags } from "./featureFlags/values";
 import { Route, Link, Routes, useNavigate } from "react-router-dom";
 import Home from "./Home";
 import Picks from "./Picks";
+import Agents from "./Agents";
 import Login from "./Login";
 import Register from "./Register";
 import { UserDropdown } from "./components/UserDropdown";
@@ -19,7 +20,7 @@ export function AppRoutes({ isLoggedIn, setIsLoggedIn }: AppRoutesProps) {
       localStorage.removeItem("token");
       localStorage.removeItem("username");
       setIsLoggedIn(false);
-      navigate("/"); // Redirect to home after logout
+      navigate("/");
     };
   
     return (
@@ -30,12 +31,17 @@ export function AppRoutes({ isLoggedIn, setIsLoggedIn }: AppRoutesProps) {
               TraderDeck
             </Link>
             <div className="flex items-center">
-              <Link to="/" className="mx-2 hover:text-white">
+              <Link to="/" className="mx-6 hover:text-white">
                 Home
               </Link>
               {isLoggedIn && (
-                <Link to="/picks" className="mx-2 hover:text-white">
+                <Link to="/picks" className="mx-6 hover:text-white">
                   Picks
+                </Link>
+              )}
+              {isLoggedIn && (
+                <Link to="/agents" className="mx-10 hover:text-white">
+                  Agents
                 </Link>
               )}
               {!isLoggedIn ? (
@@ -62,10 +68,10 @@ export function AppRoutes({ isLoggedIn, setIsLoggedIn }: AppRoutesProps) {
         <Routes>
           <Route path="/" element={<Home />} />
           {isLoggedIn && <Route path="/picks" element={<Picks />} />}
+          {isLoggedIn && <Route path="/agents" element={<Agents />} />}
           {!isLoggedIn && <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />}
           {featureFlags.SHOW_REGISTER && !isLoggedIn &&  <Route path="/register" element={<Register setIsLoggedIn={setIsLoggedIn} />} />}
         </Routes>
       </>
     );
   }
-  

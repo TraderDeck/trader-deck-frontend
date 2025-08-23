@@ -6,6 +6,11 @@ import {TICKER_CATEGORIES} from "../constants/Ticker";
 import { cleanTickerName } from '../utils/tickerUtils';
 import { SquarePlay, Square, SquareSigma } from "lucide-react";
 
+const CATEGORY_TOOLTIPS: Record<TickerCategory, string> = {
+  [TICKER_CATEGORIES.PLAYING]: "Playing: To be executed",
+  [TICKER_CATEGORIES.CONSIDERING]: "Considering: Under research",
+  [TICKER_CATEGORIES.NONE]: "None: No action taken",
+};
 
 interface Props {
     tickers: CategorizedTicker[];
@@ -106,23 +111,38 @@ const FilterMenu = ({ tickers, appliedFilters, onFilterApply }: Props) => {
           <div className="mt-2">
           <h4 className="font-semibold">Categories</h4>
           <div className="flex space-x-4 mt-1">
-            <div 
-              className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.PLAYING) ? 'border-blue-500' : 'border-gray-300'}`} 
-              onClick={() => toggleCategory(TICKER_CATEGORIES.PLAYING)}
-            >
-              <SquarePlay className="w-6 h-6 text-kelly-green" />
+            <div className="relative group">
+              <div 
+                className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.PLAYING) ? 'border-blue-500' : 'border-gray-300'}`} 
+                onClick={() => toggleCategory(TICKER_CATEGORIES.PLAYING)}
+              >
+                <SquarePlay className="w-6 h-6 text-kelly-green" />
+              </div>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap rounded bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-75 z-50">
+                {CATEGORY_TOOLTIPS[TICKER_CATEGORIES.PLAYING]}
+              </span>
             </div>
-            <div 
-              className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.CONSIDERING) ? 'border-blue-500' : 'border-gray-300'}`} 
-              onClick={() => toggleCategory(TICKER_CATEGORIES.CONSIDERING)}
-            >
-              <SquareSigma className="w-6 h-6 text-yellow-green" />
+            <div className="relative group">
+              <div 
+                className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.CONSIDERING) ? 'border-blue-500' : 'border-gray-300'}`} 
+                onClick={() => toggleCategory(TICKER_CATEGORIES.CONSIDERING)}
+              >
+                <SquareSigma className="w-6 h-6 text-yellow-green" />
+              </div>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap rounded bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-75 z-50">
+                {CATEGORY_TOOLTIPS[TICKER_CATEGORIES.CONSIDERING]}
+              </span>
             </div>
-            <div 
-              className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.NONE) ? 'border-blue-500' : 'border-gray-300'}`} 
-              onClick={() => toggleCategory(TICKER_CATEGORIES.NONE)}
-            >
-              <Square className="w-6 h-6 text-bittersweet-shimmer" />
+            <div className="relative group">
+              <div 
+                className={`p-2 border-3 rounded cursor-pointer ${selectedCategories.includes(TICKER_CATEGORIES.NONE) ? 'border-blue-500' : 'border-gray-300'}`} 
+                onClick={() => toggleCategory(TICKER_CATEGORIES.NONE)}
+              >
+                <Square className="w-6 h-6 text-bittersweet-shimmer" />
+              </div>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 whitespace-nowrap rounded bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-75 z-50">
+                {CATEGORY_TOOLTIPS[TICKER_CATEGORIES.NONE]}
+              </span>
             </div>
           </div>
         </div>

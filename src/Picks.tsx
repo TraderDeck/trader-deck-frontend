@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import useTickers from "./hooks/useTickers";
 import { cleanTickerName } from './utils/tickerUtils';
-import { Ticker, CategorizedTicker, TickerCategory, tickerPicksFilters } from "./types/Ticker";
+import { Ticker, TickerCategory, tickerPicksFilters } from "./types/Ticker";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import TickerCard from "./components/TickerCard";
 import PicksFilter from "./components/PicksFilter";
@@ -19,9 +19,9 @@ import {
   saveImplementationNote
 } from "./api/implementationNoteService"; 
 import { CollapsibleSection } from "./components/ui/CollapsibleSection";
-import {saveTickerCategory} from "./api/tickerCategoryService"; 
+import { saveTickerCategory } from "./api/tickerCategoryService"; 
 import { getCurrentCategories } from "./api/tickerCategoryService";
-
+import { usePicksState } from './context/PicksContext';
 
 const NBR_TICKERS_PER_PAGE = 5;
 const INIT_IMPLEMENTATION_NOTE_CONTENT = "<ul><li><p><strong>When to buy  ? : </strong></p></li><li><p><strong>How much to buy ? :</strong></p></li><li><p><strong>When to sell ? :</strong></p></li></ul>";
@@ -37,40 +37,23 @@ const Picks = () => {
       marketCapMin: "",
     });
 
-    // const [selectedDate, setSelectedDate] = useState<string>(() => {
-    //   const today = new Date();
-    //   return today.toISOString().split("T")[0]; 
-    // });
-
-    const [activeTicker, setActiveTicker] = useState<CategorizedTicker | null>(null);
+    const {
+      selectedFilters, setSelectedFilters,
+      sortOption, setSortOption,
+      currentPage, setCurrentPage,
+      inputValue, setInputValue,
+      activeTicker, setActiveTicker,
+      categorizedTickers, setCategorizedTickers,
+      filteredTickers, setFilteredTickers
+    } = usePicksState();
 
     //For testing to get tickers from db (this will get replaced)
     const [submittedFilters, setSubmittedFilters] = useState<null | typeof filters>(null);
-    const { tickers} = useTickers(submittedFilters);
+    const { tickers } = useTickers(submittedFilters);
 
-    const [categorizedTickers, setCategorizedTickers] = useState<CategorizedTicker[]>([]);
-
-    const [filteredTickers, setFilteredTickers] = useState<CategorizedTicker[]>(categorizedTickers); 
-
-    const [sortOption, setSortOption] = useState({ field: "symbol", order: "asc" });
-    
-    /*============= Pagination ==============*/
-    const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(NBR_TICKERS_PER_PAGE);
     const containerRef = useRef<HTMLDivElement | null>(null); 
-    const [inputValue, setInputValue] = useState("1");
     const inputRef = useRef<HTMLInputElement>(null);
-
-
-    const [selectedFilters, setSelectedFilters] = useState<tickerPicksFilters>({
-      categories: [],
-      tickers: [],
-      sectors: [],
-      industries: [],
-      countries: [],
-      minMarketCap: '',
-      maxMarketCap: ''
-    });
 
     /*============= Research Notes ==============*/
     const [researchNotes, setResearchNotes] = useState<Record<string, string>>({});
@@ -113,18 +96,21 @@ const Picks = () => {
 
     const applyFilters = (filters: tickerPicksFilters) => {
       setSelectedFilters(filters);
-      const filteredTickers = categorizedTickers.filter(ticker =>
+      const filtered = computeFilteredTickers(categorizedTickers, filters);
+      setFilteredTickers(filtered);
+      setCurrentPage(1); 
+    };
+
+    const computeFilteredTickers = (base: any[], filters: tickerPicksFilters) => {
+      return base.filter(ticker =>
         (filters.tickers.length === 0 || filters.tickers.includes(`${ticker.symbol}: ${cleanTickerName(ticker.name)}`)) &&
         (filters.sectors.length === 0 || ticker.sector && filters.sectors.includes(ticker.sector)) &&
         (filters.industries.length === 0 || ticker.industry && filters.industries.includes(ticker.industry)) &&
         (filters.countries.length === 0 || ticker.country && filters.countries.includes(ticker.country)) &&
         (!filters.minMarketCap || (ticker.marketCap !== null && ticker.marketCap >= parseFloat(filters.minMarketCap) * 1_000_000)) &&
         (!filters.maxMarketCap || (ticker.marketCap !== null && ticker.marketCap <= parseFloat(filters.maxMarketCap) * 1_000_000)) &&
-        (filters.categories.length === 0 || filters.categories.includes(ticker.category)) // ✅ Ensure categories persist
+        (filters.categories.length === 0 || filters.categories.includes(ticker.category))
       );
-    
-      setFilteredTickers(filteredTickers);
-      setCurrentPage(1); 
     };
   
     
@@ -181,7 +167,6 @@ const Picks = () => {
 
     }, [inputValue]); 
 
-    // submitting filters at the beginning (testing)
     useEffect(()=> {
       console.log("setting submitted filters...");
       setSubmittedFilters({
@@ -193,32 +178,42 @@ const Picks = () => {
       });
     }, []); 
 
-    //After tickers are retrieved
     useEffect(() => {
       const fetchCategories = async () => {
         try {
           const symbols = tickers.map(ticker => ticker.symbol);
           const response = await getCurrentCategories(symbols);
           const categories = response.data; 
-          
           const tickersWithCategories = tickers.map((ticker) => ({
             ...ticker,
             category: categories[ticker.symbol]?.category|| TICKER_CATEGORIES.NONE,
           }));
-
-    
           setCategorizedTickers(tickersWithCategories);
-          setFilteredTickers(tickersWithCategories);
+
+          const hasActiveFilters = (
+            selectedFilters.categories.length > 0 ||
+            selectedFilters.tickers.length > 0 ||
+            selectedFilters.sectors.length > 0 ||
+            selectedFilters.industries.length > 0 ||
+            selectedFilters.countries.length > 0 ||
+            selectedFilters.minMarketCap !== '' ||
+            selectedFilters.maxMarketCap !== ''
+          );
+
+          if (hasActiveFilters) {
+            const reapplied = computeFilteredTickers(tickersWithCategories, selectedFilters);
+            setFilteredTickers(reapplied);
+          } else {
+            setFilteredTickers(tickersWithCategories);
+          }
         } catch (error) {
           console.error("Error fetching categories:", error);
         }
       };
-    
       if (tickers.length > 0) {
         fetchCategories();
       }
     
-      // Prefetch research notes for the first page tickers
       const prefetchTickers = tickers.slice(0, NBR_TICKERS_PER_PAGE).map(t => t.symbol);
       fetchResearchNotesForTickers(prefetchTickers).then(notes => {
         setResearchNotes(prev => ({ ...prev, ...notes }));
@@ -240,7 +235,7 @@ const Picks = () => {
       if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= totalPages) {
         setCurrentPage(pageNumber);
       } else {
-        setInputValue(currentPage.toString()); // Reset if invalid
+        setInputValue(currentPage.toString()); 
       }
     };
   
@@ -251,15 +246,14 @@ const Picks = () => {
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Enter") {
         updatePageNumber();
-        inputRef.current?.blur(); // Remove focus after entering a valid number
+        inputRef.current?.blur();
       }
     };
 
 
     const handleDateChange = (date: Date) => {
-      const formattedDate = date.toISOString().split("T")[0]; // Convert Date to 'YYYY-MM-DD'
+      const formattedDate = date.toISOString().split("T")[0];
       console.log(formattedDate);
-      // setSelectedDate(formattedDate);
     };
 
     const updateCategory = (symbol: string, category: TickerCategory) => {

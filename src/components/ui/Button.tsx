@@ -16,12 +16,10 @@ const Button: React.FC<ButtonProps> = ({
   let variantStyles = "";
   let sizeStyles = "";
 
-  // Variant styles
   if (variant === "default") variantStyles = "bg-blue-600 text-white hover:bg-blue-700";
   if (variant === "outline") variantStyles = "border border-gray-300 text-gray-700 hover:bg-gray-100";
   if (variant === "ghost") variantStyles = "text-gray-700 hover:bg-gray-200";
 
-  // Size styles
   if (size === "icon") sizeStyles = "w-10 h-10 p-2";
   if (size === "small") sizeStyles = "px-3 py-1 text-sm";
   if (size === "default") sizeStyles = "px-4 py-2";

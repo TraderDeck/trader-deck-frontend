@@ -5,7 +5,7 @@ export function CollapsibleSection({
     title,
     children,
     defaultOpen = true,
-    headerAdditionalClass = "bg-parchment", // new optional prop
+    headerAdditionalClass = "bg-parchment",
   }: {
     title: string;
     children: React.ReactNode;
