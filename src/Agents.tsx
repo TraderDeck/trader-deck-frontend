@@ -207,9 +207,7 @@ const Agents = () => {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
   const activeJobIdRef = useRef<string | null>(null);
   const cancelRef = useRef<boolean>(false);
   const { push: pushToast } = useToast();
@@ -225,25 +223,12 @@ const Agents = () => {
   }, []);
 
   useEffect(() => {
-    if (isLoading) {
-      setElapsedMs(0);
-    }
-  }, [isLoading]);
-
-  useEffect(() => {
     if (!status) return;
     if (status === 'COMPLETED') pushToast({ message: 'Analysis complete', type: 'success' });
     else if (status === 'ERROR') pushToast({ message: 'Analysis failed', type: 'error' });
     else if (status === 'TIMEOUT') pushToast({ message: 'Analysis still running server-side (timeout)', type: 'warning' });
     else if (status === 'CANCELLED') pushToast({ message: 'Analysis cancelled', type: 'info' });
   }, [status, pushToast]);
-
-  // Elapsed timer
-  useEffect(() => {
-    if (!isLoading) return;
-    const id = setInterval(() => setElapsedMs(e => e + 1000), 1000);
-    return () => clearInterval(id);
-  }, [isLoading]);
 
   const pollJob = (jid: string, started: number) => {
     if (cancelRef.current) return; // cancelled
@@ -278,7 +263,6 @@ const Agents = () => {
     if (!selectedTicker || isLoading) return;
     cancelRef.current = false;
     activeJobIdRef.current = null;
-    setJobId(null);
     setAnalysis(null);
     setError(null);
     setStatus('QUEUING');
@@ -286,14 +270,12 @@ const Agents = () => {
     try {
       const startRes = await startAnalysis({ tickerSymbol: selectedTicker.symbol, userPrompt: '' });
       if (typeof startRes !== 'string') {
-        // Synchronous response (legacy backend path)
         setAnalysis(startRes.result);
         setIsLoading(false);
         setStatus('COMPLETED');
         return;
       }
       const jid = startRes;
-      setJobId(jid);
       activeJobIdRef.current = jid;
       setStatus('IN_PROGRESS');
       const started = Date.now();
@@ -305,22 +287,9 @@ const Agents = () => {
     }
   };
 
-  const handleCancel = () => {
-    if (!isLoading) return;
-    cancelRef.current = true;
-    activeJobIdRef.current = null;
-    setIsLoading(false);
-    setStatus('CANCELLED');
-  };
-
-  const handleRetry = () => {
-    if (selectedTicker && !isLoading) handleAnalyze();
-  };
-
   const handleTickerSelect = (ticker: Ticker) => {
     cancelRef.current = true; // cancel any active polling
     activeJobIdRef.current = null;
-    setJobId(null);
     setStatus(null);
     setSelectedTicker(ticker);
     setAnalysis(null);
